@@ -14,6 +14,7 @@ targets:
     deploymentTarget: "17.0"
     appCategory: productivity
     displayName: "Reset My Space"
+    team: "Dustin Schaaf"
     sources:
       - path: REASON
         excludes:
