@@ -1,6 +1,6 @@
-# REASON
+# Reset My Space
 
-REASON is a production-minded native iOS app scaffold for supportive home organization and staging. Users can upload a space photo, receive a score-based reset plan, explore Amazon-only product suggestions, preview an AI-inspired optimization concept, compare progress over time, and run a staging-focused mode for selling or showings.
+Reset My Space (by REASON) is a production-minded native iOS app scaffold for supportive home organization and staging. Users can upload a space photo, receive a score-based reset plan, explore Amazon-only product suggestions, preview an AI-inspired optimization concept, compare progress over time, and run a staging-focused mode for selling or showings.
 
 ## What’s included
 

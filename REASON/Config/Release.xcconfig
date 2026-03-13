@@ -1,6 +1,6 @@
 #include? "Secrets.xcconfig"
 
-APP_DISPLAY_NAME = REASON
+APP_DISPLAY_NAME = Reset My Space
 SUPABASE_URL =
 SUPABASE_ANON_KEY =
 OPENAI_API_KEY =

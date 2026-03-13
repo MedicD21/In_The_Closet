@@ -14,7 +14,7 @@ struct OnboardingView: View {
         ),
         OnboardingStep(
             title: "Get a supportive score",
-            detail: "REASON explains what is working, what feels harder than it should, and where the easiest wins live.",
+            detail: "Reset My Space explains what is working, what feels harder than it should, and where the easiest wins live.",
             imageName: "chart.bar.doc.horizontal",
             accent: BrandColor.gold
         ),
@@ -31,9 +31,12 @@ struct OnboardingView: View {
             Spacer(minLength: 20)
 
             VStack(spacing: 10) {
-                Text("REASON")
+                Text("Reset My Space")
                     .font(BrandTypography.brandTitle)
                     .foregroundStyle(colorScheme == .dark ? BrandColor.gold : BrandColor.teal)
+                Text("By REASON")
+                    .font(BrandTypography.caption)
+                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
                 Text("Warm guidance for organizing, staging, and finding your space again.")
                     .font(BrandTypography.body)
                     .foregroundStyle(BrandColor.secondaryText(for: colorScheme))

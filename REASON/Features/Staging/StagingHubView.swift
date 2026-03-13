@@ -13,7 +13,7 @@ struct StagingHubView: View {
                         Text("Staging Mode")
                             .font(BrandTypography.screenTitle)
                             .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                        Text("Use REASON to lighten visual clutter, hide personal cues, and build a showing-day checklist that feels achievable.")
+                        Text("Use Reset My Space to lighten visual clutter, hide personal cues, and build a showing-day checklist that feels achievable.")
                             .font(BrandTypography.body)
                             .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
                         PrimaryActionButton("Start a Staging Review", systemImage: "house.and.flag") {

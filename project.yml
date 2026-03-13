@@ -21,7 +21,7 @@ targets:
       - path: REASON/Resources
     settings:
       base:
-        PRODUCT_NAME: REASON
+        PRODUCT_NAME: "Reset My Space"
         PRODUCT_BUNDLE_IDENTIFIER: com.dustinschaaf.reason
         MARKETING_VERSION: 1.0
         CURRENT_PROJECT_VERSION: 1

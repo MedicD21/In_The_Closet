@@ -17,7 +17,7 @@ final class MockAuthService: AuthService {
         }
 
         let user = makeUser(
-            name: email.components(separatedBy: "@").first?.capitalized ?? "REASON User",
+            name: email.components(separatedBy: "@").first?.capitalized ?? "Reset My Space User",
             email: email,
             authMethod: .email
         )

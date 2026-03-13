@@ -40,7 +40,7 @@ struct AnalysisLoadingView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 
-            Text("REASON keeps the tone warm, practical, and focused on the easiest helpful changes first.")
+            Text("Reset My Space keeps the tone warm, practical, and focused on the easiest helpful changes first.")
                 .font(BrandTypography.body)
                 .foregroundStyle(BrandColor.secondaryText(for: .light))
                 .multilineTextAlignment(.center)

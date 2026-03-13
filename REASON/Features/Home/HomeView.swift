@@ -32,9 +32,12 @@ struct HomeView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("REASON")
+            Text("Reset My Space")
                 .font(BrandTypography.brandTitle)
                 .foregroundStyle(colorScheme == .dark ? BrandColor.gold : BrandColor.teal)
+            Text("By REASON")
+                .font(BrandTypography.caption)
+                .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
             Text("Find your space again.")
                 .font(BrandTypography.bodyStrong)
                 .foregroundStyle(BrandColor.primaryText(for: colorScheme))
@@ -132,8 +135,7 @@ struct HomeView: View {
         BrandCard {
             VStack(alignment: .leading, spacing: 14) {
                 SectionHeader(title: "Brand direction", subtitle: "Current visual reference included in the build")
-                Image("HomeMockup")
-                    .resizable()
+                ReferenceImageView(assetName: "HomeMockup", bundleFileName: "home-mockup", fileExtension: "png")
                     .scaledToFit()
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 Text("Soft rounded cards, warm neutral space, and teal-gold accents guide the UI language throughout the app.")

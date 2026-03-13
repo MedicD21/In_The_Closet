@@ -9,7 +9,7 @@ struct AuthView: View {
         ScrollView {
             VStack(spacing: 24) {
                 VStack(spacing: 12) {
-                    Text("Welcome back to REASON")
+                    Text("Welcome back to Reset My Space")
                         .font(BrandTypography.screenTitle)
                         .foregroundStyle(BrandColor.primaryText(for: colorScheme))
                     Text("Sign in to save projects, compare progress, and build staged shopping lists over time.")

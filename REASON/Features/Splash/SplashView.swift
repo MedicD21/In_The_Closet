@@ -8,9 +8,13 @@ struct SplashView: View {
             Spacer()
 
             VStack(spacing: 12) {
-                Text("REASON")
+                Text("Reset My Space")
                     .font(.system(size: 54, weight: .bold, design: .serif))
                     .foregroundStyle(colorScheme == .dark ? BrandColor.gold : BrandColor.teal)
+
+                Text("By REASON")
+                    .font(BrandTypography.caption)
+                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
 
                 Text("Find your space again.")
                     .font(BrandTypography.body)
@@ -21,8 +25,7 @@ struct SplashView: View {
                     .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
             }
 
-            Image("ResultsMockup")
-                .resizable()
+            ReferenceImageView(assetName: "ResultsMockup", bundleFileName: "results-mockup", fileExtension: "png")
                 .scaledToFit()
                 .frame(maxWidth: 280)
                 .shadow(color: Color.black.opacity(0.12), radius: 20, x: 0, y: 12)
