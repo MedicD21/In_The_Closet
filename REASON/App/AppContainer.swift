@@ -12,25 +12,39 @@ struct AppContainer {
     @MainActor
     static func bootstrap() -> AppContainer {
         let config = AppConfig.fromBundle()
+        let qualityMode: AIQualityMode = .free
+
         let themeStore = ThemeStore()
         let clientFactory = SupabaseClientFactory(config: config)
         let localRepository = FileBackedProjectRepository()
-        let remoteRepository = config.isSupabaseConfigured ? SupabaseProjectRepository(clientFactory: clientFactory) : nil
+        let remoteRepository = config.isSupabaseConfigured
+            ? SupabaseProjectRepository(clientFactory: clientFactory)
+            : nil
         let projectRepository = ResilientProjectRepository(primary: remoteRepository, fallback: localRepository)
         let authService: AuthService = config.isSupabaseConfigured
             ? SupabaseAuthService(clientFactory: clientFactory)
             : MockAuthService()
-        let mockAI = MockAIAnalysisService()
-        let analysisService = AIRouterService(
-            primary: OpenAIAnalysisProvider(config: config),
-            coach: AnthropicCoachingProvider(config: config),
-            fallback: mockAI
+
+        let openRouterClient = OpenRouterClient(apiKey: config.openRouterAPIKey)
+        let linkBuilder = AmazonAffiliateLinkBuilder(
+            baseURL: config.amazonBaseURL,
+            associateTag: config.amazonAssociateTag.isEmpty ? "Reasonhome-20" : config.amazonAssociateTag
         )
-        let productRecommendationService = CuratedAmazonRecommendationService(
-            linkBuilder: AmazonAffiliateLinkBuilder(
-                baseURL: config.amazonBaseURL,
-                associateTag: config.amazonAssociateTag.isEmpty ? "yourtag-20" : config.amazonAssociateTag
-            )
+
+        let analysisService = AIRouterService(
+            primary: OpenRouterAnalysisService(client: openRouterClient, qualityMode: qualityMode),
+            fallback: MockAIAnalysisService()
+        )
+
+        let productRecommendationService = OpenRouterProductRecommendationService(
+            client: openRouterClient,
+            linkBuilder: linkBuilder,
+            qualityMode: qualityMode
+        )
+
+        let visualizationService = OpenRouterVisualizationService(
+            client: openRouterClient,
+            qualityMode: qualityMode
         )
 
         return AppContainer(
@@ -38,7 +52,7 @@ struct AppContainer {
             authService: authService,
             projectRepository: projectRepository,
             analysisService: analysisService,
-            visualizationService: MockVisualizationService(),
+            visualizationService: visualizationService,
             productRecommendationService: productRecommendationService,
             themeStore: themeStore
         )

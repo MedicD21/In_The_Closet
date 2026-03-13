@@ -1,12 +1,11 @@
 {
-    "images": [
-        {
-            "idiom": "universal",
-            "filename": "RMS_Splash.png"
-        }
-    ],
-    "info": {
-        "author": "xcode",
-        "version": 1
-    }
+  "images": [
+    { "idiom": "universal", "scale": "1x", "filename": "RMS_Splash@1x.png" },
+    { "idiom": "universal", "scale": "2x", "filename": "RMS_Splash@2x.png" },
+    { "idiom": "universal", "scale": "3x", "filename": "RMS_Splash@3x.png" }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
 }

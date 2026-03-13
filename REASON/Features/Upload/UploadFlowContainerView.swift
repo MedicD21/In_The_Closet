@@ -208,6 +208,8 @@ private struct PhotoUploadView: View {
     @State private var selectedItem: PhotosPickerItem?
 
     var body: some View {
+        let hasImage = viewModel.draft.selectedImageData != nil
+        let scheme = colorScheme
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: "Add your photo", subtitle: "Single-photo analysis is live in v1, with room for extra angles later.")
@@ -220,18 +222,18 @@ private struct PhotoUploadView: View {
 
                 PhotosPicker(selection: $selectedItem, matching: .images) {
                     HStack {
-                        Text(viewModel.draft.selectedImageData == nil ? "Choose Photo" : "Replace Photo")
+                        Text(hasImage ? "Replace Photo" : "Choose Photo")
                             .font(BrandTypography.button)
-                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+                            .foregroundStyle(BrandColor.primaryText(for: scheme))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                     }
                     .background(
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(BrandColor.surface(for: colorScheme))
+                            .fill(BrandColor.surface(for: scheme))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .stroke(BrandColor.divider(for: colorScheme), lineWidth: 1)
+                                    .stroke(BrandColor.divider(for: scheme), lineWidth: 1)
                             )
                     )
                 }

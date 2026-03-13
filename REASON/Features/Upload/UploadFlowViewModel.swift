@@ -81,7 +81,13 @@ final class UploadFlowViewModel: ObservableObject {
             )
 
             analysis.budgetRecommendations = await container.productRecommendationService.recommendations(
-                for: RecommendationContext(spaceType: draft.spaceType, mode: draft.mode, analysisID: analysis.id)
+                for: RecommendationContext(
+                    spaceType: draft.spaceType,
+                    mode: draft.mode,
+                    analysisID: analysis.id,
+                    problems: analysis.biggestProblems,
+                    opportunities: analysis.bestOpportunities
+                )
             )
 
             let builtProject = buildProject(with: analysis)

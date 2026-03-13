@@ -1,30 +1,21 @@
 import Foundation
 
+@MainActor
 final class AIRouterService: AIAnalysisService {
-    private let primary: OpenAIAnalyzing
-    private let coach: AnthropicCoachingProviding
+    private let primary: AIAnalysisService
     private let fallback: AIAnalysisService
 
-    init(primary: OpenAIAnalyzing, coach: AnthropicCoachingProviding, fallback: AIAnalysisService) {
+    init(primary: AIAnalysisService, fallback: AIAnalysisService) {
         self.primary = primary
-        self.coach = coach
         self.fallback = fallback
     }
 
     func analyze(request: AnalysisRequest) async throws -> SpaceAnalysis {
         do {
-            var analysis = try await primary.analyze(request: request)
-            analysis.providerPrimary = .openAI
-
-            if let coaching = try? await coach.supportiveCoaching(for: request, analysis: analysis) {
-                analysis.supportiveCoachingText = coaching
-                analysis.providerSecondary = .anthropic
-            }
-
-            return analysis
+            return try await primary.analyze(request: request)
         } catch {
             var fallbackAnalysis = try await fallback.analyze(request: request)
-            fallbackAnalysis.confidenceNotes.append("Using the built-in local analysis scaffold while the live provider setup is still being finalized.")
+            fallbackAnalysis.confidenceNotes.append("Using built-in scaffold — live provider unavailable: \(error.localizedDescription)")
             return fallbackAnalysis
         }
     }

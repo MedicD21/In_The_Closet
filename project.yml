@@ -43,6 +43,7 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
+      - sdk: AuthenticationServices.framework
   REASONTests:
     type: bundle.unit-test
     platform: iOS

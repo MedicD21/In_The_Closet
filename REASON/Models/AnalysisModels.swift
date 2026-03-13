@@ -98,6 +98,7 @@ struct VisualizationConcept: Codable, Hashable {
     var whatImproved: [String]
     var stillNeedsWork: [String]
     var conceptCaption: String
+    var generatedImageURL: URL?
 }
 
 struct StagingAdvice: Codable, Hashable {

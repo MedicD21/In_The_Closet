@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Foundation
 import Supabase
 
@@ -39,10 +40,24 @@ final class SupabaseAuthService: AuthService {
         )
     }
 
-    // MARK: - Social auth (scaffolded — requires final OAuth token handoff)
+    // MARK: - Apple Sign In
 
     func continueWithApple() async throws -> UserProfile {
-        throw AppError.unavailable("Sign in with Apple requires the final token exchange and nonce flow.")
+        let coordinator = AppleSignInCoordinator()
+        let result = try await coordinator.signIn()
+
+        let client = try clientFactory.makeClient()
+        let session = try await client.auth.signInWithIdToken(
+            credentials: .init(provider: .apple, idToken: result.idToken, nonce: result.nonce)
+        )
+
+        let email = result.email ?? session.user.email ?? ""
+        return try await fetchOrCreateProfile(
+            client: client,
+            userID: session.user.id,
+            email: email,
+            displayName: result.fullName
+        )
     }
 
     func continueWithGoogle() async throws -> UserProfile {
@@ -84,7 +99,12 @@ final class SupabaseAuthService: AuthService {
 
     // MARK: - Profile helpers
 
-    private func fetchOrCreateProfile(client: SupabaseClient, userID: UUID, email: String) async throws -> UserProfile {
+    private func fetchOrCreateProfile(
+        client: SupabaseClient,
+        userID: UUID,
+        email: String,
+        displayName: String? = nil
+    ) async throws -> UserProfile {
         struct ProfileRow: Decodable {
             let id: UUID
             let email: String?
@@ -120,12 +140,8 @@ final class SupabaseAuthService: AuthService {
             )
         }
 
-        return try await upsertProfile(
-            client: client,
-            userID: userID,
-            email: email,
-            displayName: email.components(separatedBy: "@").first?.capitalized ?? "User"
-        )
+        let name = displayName ?? email.components(separatedBy: "@").first?.capitalized ?? "User"
+        return try await upsertProfile(client: client, userID: userID, email: email, displayName: name)
     }
 
     private func upsertProfile(client: SupabaseClient, userID: UUID, email: String, displayName: String) async throws -> UserProfile {

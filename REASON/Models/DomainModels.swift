@@ -117,6 +117,7 @@ enum Retailer: String, Codable {
 enum AIProvider: String, Codable {
     case openAI
     case anthropic
+    case openRouter
     case mock
 }
 
