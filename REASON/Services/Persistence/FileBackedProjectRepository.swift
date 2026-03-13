@@ -10,13 +10,7 @@ final class FileBackedProjectRepository: ProjectRepository {
 
     func fetchProjects(for userID: UUID) async throws -> [SpaceProject] {
         let stored = try loadAllProjects()
-        let userProjects = stored.filter { $0.userID == userID }
-        if userProjects.isEmpty {
-            let seeded = SampleSeed.projects(for: userID)
-            try persist(allProjects: stored + seeded)
-            return seeded
-        }
-        return userProjects.sorted(by: { $0.updatedAt > $1.updatedAt })
+        return stored.filter { $0.userID == userID }.sorted(by: { $0.updatedAt > $1.updatedAt })
     }
 
     func save(project: SpaceProject) async throws -> SpaceProject {
