@@ -32,6 +32,9 @@ targets:
         TARGETED_DEVICE_FAMILY: 1
         DEVELOPMENT_ASSET_PATHS: REASON/Resources/PreviewData
         SUPPORTS_MACCATALYST: NO
+        APPCATEGORY: productivity
+        DISPLAY_NAME: "Reset My Space"
+        DEVELOPMENT_TEAM: "Dustin Schaaf"
       configs:
         Debug:
           baseConfiguration: REASON/Config/Debug.xcconfig
