@@ -1,0 +1,54 @@
+name: REASON
+options:
+  bundleIdPrefix: com.dustinschaaf
+  createIntermediateGroups: true
+  defaultConfig: Debug
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift.git
+    from: 2.0.0
+targets:
+  REASON:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: REASON
+        excludes:
+          - Resources
+          - Config
+    resources:
+      - path: REASON/Resources
+    settings:
+      base:
+        PRODUCT_NAME: REASON
+        PRODUCT_BUNDLE_IDENTIFIER: com.dustinschaaf.reason
+        MARKETING_VERSION: 1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: 6.0
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: REASON/Config/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: 1
+        DEVELOPMENT_ASSET_PATHS: REASON/Resources/PreviewData
+        SUPPORTS_MACCATALYST: NO
+      configs:
+        Debug:
+          baseConfiguration: REASON/Config/Debug.xcconfig
+        Release:
+          baseConfiguration: REASON/Config/Release.xcconfig
+    dependencies:
+      - package: Supabase
+        product: Supabase
+  REASONTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - REASONTests
+    dependencies:
+      - target: REASON
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: 6.0
