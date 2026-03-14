@@ -6,12 +6,12 @@ final class OpenRouterProductRecommendationService: ProductRecommendationService
     private let linkBuilder: AmazonAffiliateLinkBuilder
     private let qualityMode: AIQualityMode
 
-    // Stage 3 — product recommendation models
+    // Stage 3 — product recommendation models (confirmed available 2026-03)
     private var model: String {
         switch qualityMode {
-        case .free:        "qwen/qwen3-next-80b-a3b-instruct:free"
-        case .budget:      "qwen/qwen3-next-80b-a3b-instruct:free"
-        case .highQuality: "qwen/qwen3-235b-a22b:free"
+        case .free:        "meta-llama/llama-3.3-70b-instruct:free"
+        case .budget:      "nousresearch/hermes-3-llama-3.1-405b:free"
+        case .highQuality: "nousresearch/hermes-3-llama-3.1-405b:free"
         }
     }
 

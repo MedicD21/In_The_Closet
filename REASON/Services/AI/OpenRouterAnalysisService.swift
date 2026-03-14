@@ -5,21 +5,21 @@ final class OpenRouterAnalysisService: AIAnalysisService {
     private let client: OpenRouterClient
     private let qualityMode: AIQualityMode
 
-    // Stage 1 — vision models
+    // Stage 1 — vision models (confirmed available 2026-03)
     private var visionModel: String {
         switch qualityMode {
-        case .free:        "meta-llama/llama-3.2-90b-vision-instruct:free"
-        case .budget:      "qwen/qwen2.5-vl-7b-instruct"
-        case .highQuality: "qwen/qwen2.5-vl-72b-instruct:free"
+        case .free:        "google/gemma-3-27b-it:free"
+        case .budget:      "mistralai/mistral-small-3.1-24b-instruct:free"
+        case .highQuality: "mistralai/mistral-small-3.1-24b-instruct:free"
         }
     }
 
-    // Stage 2 — planner models
+    // Stage 2 — planner models (confirmed available 2026-03)
     private var plannerModel: String {
         switch qualityMode {
-        case .free:        "qwen/qwen3-next-80b-a3b-instruct:free"
-        case .budget:      "qwen/qwen3-next-80b-a3b-instruct:free"
-        case .highQuality: "qwen/qwen3-235b-a22b:free"
+        case .free:        "meta-llama/llama-3.3-70b-instruct:free"
+        case .budget:      "nousresearch/hermes-3-llama-3.1-405b:free"
+        case .highQuality: "nousresearch/hermes-3-llama-3.1-405b:free"
         }
     }
 

@@ -6,16 +6,12 @@ final class OpenRouterVisualizationService: VisualizationService {
     private let qualityMode: AIQualityMode
 
     // Stage 4 — image generation
-    // Note: OpenRouter does not currently offer free image generation models.
-    // stability/stable-diffusion-xl and black-forest-labs/flux are not available on OpenRouter.
+    // Note: OpenRouter does not offer image generation models.
     // generateVisualization() gracefully returns a text-only concept when image gen fails.
     // To enable real image generation, integrate a separate provider (e.g. Replicate, Together AI).
     private var imageModel: String {
-        switch qualityMode {
-        case .free:        "openrouter/free"          // routes to any available free model; will fail gracefully
-        case .budget:      "stability/stable-diffusion-xl"
-        case .highQuality: "black-forest-labs/flux"
-        }
+        // Placeholder — all paths currently return text-only concept gracefully
+        return "openrouter/unavailable"
     }
 
     init(client: OpenRouterClient, qualityMode: AIQualityMode = .free) {

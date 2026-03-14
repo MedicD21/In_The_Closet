@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 63;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -86,6 +86,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0017087CA8C045954D31F186 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		034FC38D4B2B7ECB95CBCBAE /* AnalysisModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisModels.swift; sourceTree = "<group>"; };
 		055DFCCAAC225DE770A84C10 /* AmazonAffiliateLinkBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmazonAffiliateLinkBuilder.swift; sourceTree = "<group>"; };
 		08973F195B4542E5D23A054D /* BrandCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandCard.swift; sourceTree = "<group>"; };
@@ -115,9 +116,10 @@
 		642C2EE83D16BE144DF626BB /* BrandBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandBackground.swift; sourceTree = "<group>"; };
 		65E9EA06A32AF181BBCC8651 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		6C3E561DAC4240D5B9FA9BF1 /* BrandColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandColor.swift; sourceTree = "<group>"; };
+		6DCE0E58D283BC82ED4B3038 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		723FD3D4509A1A5FC4042A54 /* AmazonAffiliateLinkBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmazonAffiliateLinkBuilderTests.swift; sourceTree = "<group>"; };
 		742B28A936B6D48B4B5305AB /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
-		80776E04CAEC8CD0E53D2BB0 /* REASON.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = REASON.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		80776E04CAEC8CD0E53D2BB0 /* Reset My Space.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Reset My Space.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		83F6BD30D54BCEA59355276B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		84284141A0EB59223ABF4394 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		86F0BB6265620BC158126442 /* SampleSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleSeed.swift; sourceTree = "<group>"; };
@@ -228,6 +230,7 @@
 			children = (
 				61730707559E4603777195B8 /* REASON.entitlements */,
 				6E160971895FA3B224EEEAFF /* App */,
+				96DA28F3FDD76C4FB2AE629A /* Config */,
 				986E52CEFA2BB55EB42BFF4D /* Core */,
 				4CF0EFE71E813126D9D1CC89 /* Features */,
 				1DCC52B6AD869CA9B7BBA4B8 /* Models */,
@@ -368,7 +371,7 @@
 		7E9F5CC1A4D24CFBF86F8627 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				80776E04CAEC8CD0E53D2BB0 /* REASON.app */,
+				80776E04CAEC8CD0E53D2BB0 /* Reset My Space.app */,
 				F074B501A53C5F22D6468953 /* REASONTests.xctest */,
 			);
 			name = Products;
@@ -380,6 +383,15 @@
 				C3E370809F7B7EC035A78DC3 /* SplashView.swift */,
 			);
 			path = Splash;
+			sourceTree = "<group>";
+		};
+		96DA28F3FDD76C4FB2AE629A /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				6DCE0E58D283BC82ED4B3038 /* Debug.xcconfig */,
+				0017087CA8C045954D31F186 /* Release.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		986E52CEFA2BB55EB42BFF4D /* Core */ = {
@@ -537,7 +549,7 @@
 				2FC1863D384CEF546340C792 /* Supabase */,
 			);
 			productName = REASON;
-			productReference = 80776E04CAEC8CD0E53D2BB0 /* REASON.app */;
+			productReference = 80776E04CAEC8CD0E53D2BB0 /* Reset My Space.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -548,11 +560,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				TargetAttributes = {
-					950AD2082F8CF7561871807A = {
-						DevelopmentTeam = "Dustin Schaaf";
-					};
-				};
 			};
 			buildConfigurationList = D2B0762FE4B18B578B3A9EAE /* Build configuration list for PBXProject "Reset-My-Space" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -567,7 +574,6 @@
 			packageReferences = (
 				524E990DA5DE2CF2379A322D /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
-			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -698,13 +704,15 @@
 		};
 		872AD77F778FD1588285CC4A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6DCE0E58D283BC82ED4B3038 /* Debug.xcconfig */;
 			buildSettings = {
 				APPCATEGORY = productivity;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = REASON/REASON.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = REASON/Resources/PreviewData;
-				DEVELOPMENT_TEAM = "Dustin Schaaf";
+				DEVELOPMENT_TEAM = 286LKF859M;
 				DISPLAY_NAME = "Reset My Space";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = REASON/Config/Info.plist;
@@ -720,7 +728,6 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				baseConfiguration = REASON/Config/Debug.xcconfig;
 			};
 			name = Debug;
 		};
@@ -843,13 +850,15 @@
 		};
 		D6C8D949B469B9FA7782844F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0017087CA8C045954D31F186 /* Release.xcconfig */;
 			buildSettings = {
 				APPCATEGORY = productivity;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = REASON/REASON.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = REASON/Resources/PreviewData;
-				DEVELOPMENT_TEAM = "Dustin Schaaf";
+				DEVELOPMENT_TEAM = 286LKF859M;
 				DISPLAY_NAME = "Reset My Space";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = REASON/Config/Info.plist;
@@ -865,7 +874,6 @@
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				baseConfiguration = REASON/Config/Release.xcconfig;
 			};
 			name = Release;
 		};

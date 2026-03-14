@@ -35,11 +35,9 @@ targets:
         APPCATEGORY: productivity
         DISPLAY_NAME: "Reset My Space"
         DEVELOPMENT_TEAM: "Dustin Schaaf"
-      configs:
-        Debug:
-          baseConfiguration: REASON/Config/Debug.xcconfig
-        Release:
-          baseConfiguration: REASON/Config/Release.xcconfig
+    configFiles:
+      Debug: REASON/Config/Debug.xcconfig
+      Release: REASON/Config/Release.xcconfig
     dependencies:
       - package: Supabase
         product: Supabase

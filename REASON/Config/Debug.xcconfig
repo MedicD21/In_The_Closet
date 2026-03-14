@@ -1,4 +1,7 @@
+// xcconfig strips // as comments — define SLASH and use $(SLASH)$(SLASH) in URLs
+SLASH = /
+
 #include? "Secrets.xcconfig"
 
 APP_DISPLAY_NAME = Reset My Space
-AMAZON_AFFILIATE_BASE_URL = https://www.amazon.com
+AMAZON_AFFILIATE_BASE_URL = https:$(SLASH)$(SLASH)www.amazon.com
