@@ -15,8 +15,7 @@ final class AIRouterService: AIAnalysisService {
             return try await primary.analyze(request: request)
         } catch {
             print("⚠️ [AIRouterService] Primary provider failed: \(error)")
-            // Re-throw so the user sees the real error rather than silent mock fallback
-            throw error
+            return try await fallback.analyze(request: request)
         }
     }
 }

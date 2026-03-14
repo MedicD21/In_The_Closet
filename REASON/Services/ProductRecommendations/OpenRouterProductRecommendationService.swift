@@ -70,8 +70,9 @@ final class OpenRouterProductRecommendationService: ProductRecommendationService
     }
 
     private func parseRecommendations(_ content: String, context: RecommendationContext) throws -> [BudgetRecommendation] {
+        let normalizedContent = JSONResponseSanitizer.clean(content)
         guard
-            let data = content.data(using: .utf8),
+            let data = normalizedContent.data(using: .utf8),
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         else {
             throw AppError.parsing("Could not parse product recommendations JSON.")

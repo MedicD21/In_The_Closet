@@ -36,6 +36,7 @@ Reset My Space (by REASON) is a production-minded native iOS app scaffold for su
    - `SUPABASE_ANON_KEY`
    - `OPENAI_API_KEY`
    - `ANTHROPIC_API_KEY`
+   - `OPENROUTER_API_KEY`
    - `AMAZON_ASSOCIATE_TAG`
    - `AMAZON_AFFILIATE_BASE_URL`
 4. Generate the project:
@@ -60,15 +61,16 @@ xcodegen generate
 ## Auth notes
 
 - Email and guest flows are usable immediately through the mock auth service.
-- `SupabaseAuthService` is scaffolded for production wiring.
-- Apple and Google buttons are present in the UI, but the live OAuth token exchange still needs the final SDK + Supabase session mapping pass.
+- `SupabaseAuthService` now handles email confirmation flows more safely by avoiding client-side profile writes before a session exists.
+- Apple sign-in is wired through native Sign in with Apple plus Supabase ID token exchange.
+- Google sign-in remains hidden in the live Supabase flow until the Google SDK token handoff is implemented.
 - Account deletion is intentionally left as a scaffold because production cleanup should also remove storage objects and related rows.
 
 ## AI provider notes
 
-- `AIRouterService` is designed for OpenAI primary analysis and Anthropic supportive coaching.
-- The current runtime safely falls back to a local mock analysis path until the live prompt contracts and structured response parsing are completed.
-- This keeps the app demoable while preserving the provider abstraction points for production.
+- The current runtime uses OpenRouter when `OPENROUTER_API_KEY` is configured.
+- If OpenRouter fails, the app falls back to OpenAI analysis plus optional Anthropic coaching when those keys are configured.
+- If no live provider is configured, the app falls back to the local mock analysis path so the upload flow stays usable.
 
 ## Amazon affiliate link strategy
 

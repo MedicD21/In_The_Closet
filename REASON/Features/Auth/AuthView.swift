@@ -49,14 +49,18 @@ struct AuthView: View {
 
                 BrandCard {
                     VStack(spacing: 14) {
-                        socialButton(title: "Continue with Apple", symbol: "apple.logo") {
-                            Task {
-                                await handleApple()
+                        if appModel.container.authService.supportsAppleSignIn {
+                            socialButton(title: "Continue with Apple", symbol: "apple.logo") {
+                                Task {
+                                    await handleApple()
+                                }
                             }
                         }
-                        socialButton(title: "Continue with Google", symbol: "globe") {
-                            Task {
-                                await handleGoogle()
+                        if appModel.container.authService.supportsGoogleSignIn {
+                            socialButton(title: "Continue with Google", symbol: "globe") {
+                                Task {
+                                    await handleGoogle()
+                                }
                             }
                         }
                         Button("Continue as Guest") {

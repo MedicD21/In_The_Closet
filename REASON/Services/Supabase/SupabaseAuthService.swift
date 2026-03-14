@@ -5,6 +5,9 @@ import Supabase
 final class SupabaseAuthService: AuthService {
     private let clientFactory: SupabaseClientFactory
 
+    let supportsAppleSignIn = true
+    let supportsGoogleSignIn = false
+
     init(clientFactory: SupabaseClientFactory) {
         self.clientFactory = clientFactory
     }
@@ -15,8 +18,26 @@ final class SupabaseAuthService: AuthService {
         guard let client = try? clientFactory.makeClient() else { return nil }
         do {
             let session = try await client.auth.session
-            return try await fetchOrCreateProfile(client: client, userID: session.user.id, email: session.user.email ?? "")
+            do {
+                return try await fetchOrCreateProfile(
+                    client: client,
+                    userID: session.user.id,
+                    email: session.user.email ?? "",
+                    authMethod: .email
+                )
+            } catch {
+                print("⚠️ [SupabaseAuthService] Failed to restore profile: \(error)")
+                return bestEffortProfile(
+                    userID: session.user.id,
+                    email: session.user.email ?? "",
+                    displayName: nil,
+                    createdAt: session.user.createdAt,
+                    updatedAt: session.user.updatedAt,
+                    authMethod: .email
+                )
+            }
         } catch {
+            print("⚠️ [SupabaseAuthService] Failed to restore session: \(error)")
             return nil
         }
     }
@@ -26,18 +47,53 @@ final class SupabaseAuthService: AuthService {
     func signIn(email: String, password: String) async throws -> UserProfile {
         let client = try clientFactory.makeClient()
         let session = try await client.auth.signIn(email: email, password: password)
-        return try await fetchOrCreateProfile(client: client, userID: session.user.id, email: session.user.email ?? email)
+        do {
+            return try await fetchOrCreateProfile(
+                client: client,
+                userID: session.user.id,
+                email: session.user.email ?? email,
+                authMethod: .email
+            )
+        } catch {
+            print("⚠️ [SupabaseAuthService] Failed to fetch profile after sign-in: \(error)")
+            return bestEffortProfile(
+                userID: session.user.id,
+                email: session.user.email ?? email,
+                displayName: nil,
+                createdAt: session.user.createdAt,
+                updatedAt: session.user.updatedAt,
+                authMethod: .email
+            )
+        }
     }
 
     func signUp(name: String, email: String, password: String) async throws -> UserProfile {
         let client = try clientFactory.makeClient()
-        let session = try await client.auth.signUp(email: email, password: password)
-        return try await upsertProfile(
-            client: client,
-            userID: session.user.id,
-            email: session.user.email ?? email,
-            displayName: name
-        )
+        let response = try await client.auth.signUp(email: email, password: password)
+
+        guard let session = response.session else {
+            throw AppError.unavailable("Account created. Check your email to confirm it, then sign in.")
+        }
+
+        do {
+            return try await fetchOrCreateProfile(
+                client: client,
+                userID: session.user.id,
+                email: session.user.email ?? email,
+                displayName: name,
+                authMethod: .email
+            )
+        } catch {
+            print("⚠️ [SupabaseAuthService] Failed to create profile after sign-up: \(error)")
+            return bestEffortProfile(
+                userID: session.user.id,
+                email: session.user.email ?? email,
+                displayName: name,
+                createdAt: session.user.createdAt,
+                updatedAt: session.user.updatedAt,
+                authMethod: .email
+            )
+        }
     }
 
     // MARK: - Apple Sign In
@@ -52,12 +108,25 @@ final class SupabaseAuthService: AuthService {
         )
 
         let email = result.email ?? session.user.email ?? ""
-        return try await fetchOrCreateProfile(
-            client: client,
-            userID: session.user.id,
-            email: email,
-            displayName: result.fullName
-        )
+        do {
+            return try await fetchOrCreateProfile(
+                client: client,
+                userID: session.user.id,
+                email: email,
+                displayName: result.fullName,
+                authMethod: .apple
+            )
+        } catch {
+            print("⚠️ [SupabaseAuthService] Failed to fetch Apple profile: \(error)")
+            return bestEffortProfile(
+                userID: session.user.id,
+                email: email,
+                displayName: result.fullName,
+                createdAt: session.user.createdAt,
+                updatedAt: session.user.updatedAt,
+                authMethod: .apple
+            )
+        }
     }
 
     func continueWithGoogle() async throws -> UserProfile {
@@ -103,7 +172,8 @@ final class SupabaseAuthService: AuthService {
         client: SupabaseClient,
         userID: UUID,
         email: String,
-        displayName: String? = nil
+        displayName: String? = nil,
+        authMethod: AuthMethod
     ) async throws -> UserProfile {
         struct ProfileRow: Decodable {
             let id: UUID
@@ -136,15 +206,27 @@ final class SupabaseAuthService: AuthService {
                 preferredTheme: AppThemePreference(rawValue: row.preferred_theme ?? "system") ?? .system,
                 preferredTone: row.preferred_tone ?? "warm",
                 onboardingCompleted: row.onboarding_completed ?? false,
-                authMethod: .email
+                authMethod: authMethod
             )
         }
 
         let name = displayName ?? email.components(separatedBy: "@").first?.capitalized ?? "User"
-        return try await upsertProfile(client: client, userID: userID, email: email, displayName: name)
+        return try await upsertProfile(
+            client: client,
+            userID: userID,
+            email: email,
+            displayName: name,
+            authMethod: authMethod
+        )
     }
 
-    private func upsertProfile(client: SupabaseClient, userID: UUID, email: String, displayName: String) async throws -> UserProfile {
+    private func upsertProfile(
+        client: SupabaseClient,
+        userID: UUID,
+        email: String,
+        displayName: String,
+        authMethod: AuthMethod
+    ) async throws -> UserProfile {
         let now = Date.now
 
         struct ProfileInsert: Encodable {
@@ -178,7 +260,32 @@ final class SupabaseAuthService: AuthService {
             preferredTheme: .system,
             preferredTone: "warm",
             onboardingCompleted: false,
-            authMethod: .email
+            authMethod: authMethod
+        )
+    }
+
+    private func bestEffortProfile(
+        userID: UUID,
+        email: String,
+        displayName: String?,
+        createdAt: Date,
+        updatedAt: Date,
+        authMethod: AuthMethod
+    ) -> UserProfile {
+        let resolvedName = displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallbackName = email.components(separatedBy: "@").first?.capitalized ?? "User"
+
+        return UserProfile(
+            id: userID,
+            email: email,
+            displayName: resolvedName?.isEmpty == false ? resolvedName! : fallbackName,
+            avatarURL: nil,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            preferredTheme: .system,
+            preferredTone: "warm",
+            onboardingCompleted: false,
+            authMethod: authMethod
         )
     }
 }

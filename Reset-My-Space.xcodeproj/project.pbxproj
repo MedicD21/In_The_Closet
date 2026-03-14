@@ -3,15 +3,17 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		046C4495B4D0E086F2AE7ADA /* TagChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF9E403FD81F1FD5AF248F24 /* TagChip.swift */; };
 		0BB754ED7B692CBFBC99CEE5 /* OpenRouterProductRecommendationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD79E2243938A3EF8B317112 /* OpenRouterProductRecommendationService.swift */; };
+		13CE5F6F82A5D4393E78C7BD /* JSONResponseSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87D43F9CF072B611E8B42C14 /* JSONResponseSanitizer.swift */; };
 		1BCD2ED814AD90256BF52482 /* ThemeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E87134C6D0267F37CF059EB /* ThemeStore.swift */; };
 		20E6E139FC183B918063B9EA /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46685D758007BA41381DCBF6 /* SettingsView.swift */; };
 		26368AB7442323E09ACE8559 /* DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D64727F80FC7839C9FC554FC /* DomainModels.swift */; };
+		2682634B50720B05B2C96BB8 /* OpenAIAnthropicAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F4A58FD8AE184862334F8B /* OpenAIAnthropicAnalysisService.swift */; };
 		2B973D4A5FF00B9BD36478F9 /* ScoreEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AFAF2FED20FDE37AF39D87F /* ScoreEngine.swift */; };
 		2EEBD677C0025EA4DA8D58BA /* ActionLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82E68BDF89653612681BE01 /* ActionLabel.swift */; };
 		2F6A93D5309D30BD5C442D0E /* AnthropicCoachingProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421186892B34E0C9C64C99B9 /* AnthropicCoachingProvider.swift */; };
@@ -115,15 +117,17 @@
 		61730707559E4603777195B8 /* REASON.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = REASON.entitlements; sourceTree = "<group>"; };
 		642C2EE83D16BE144DF626BB /* BrandBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandBackground.swift; sourceTree = "<group>"; };
 		65E9EA06A32AF181BBCC8651 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		66F4A58FD8AE184862334F8B /* OpenAIAnthropicAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIAnthropicAnalysisService.swift; sourceTree = "<group>"; };
 		6C3E561DAC4240D5B9FA9BF1 /* BrandColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandColor.swift; sourceTree = "<group>"; };
 		6DCE0E58D283BC82ED4B3038 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		723FD3D4509A1A5FC4042A54 /* AmazonAffiliateLinkBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmazonAffiliateLinkBuilderTests.swift; sourceTree = "<group>"; };
 		742B28A936B6D48B4B5305AB /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
-		80776E04CAEC8CD0E53D2BB0 /* Reset My Space.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Reset My Space.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		80776E04CAEC8CD0E53D2BB0 /* REASON.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = REASON.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		83F6BD30D54BCEA59355276B /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		84284141A0EB59223ABF4394 /* AppContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppContainer.swift; sourceTree = "<group>"; };
 		86F0BB6265620BC158126442 /* SampleSeed.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleSeed.swift; sourceTree = "<group>"; };
 		8780F2FF7098309A4E2EF513 /* OpenRouterAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRouterAnalysisService.swift; sourceTree = "<group>"; };
+		87D43F9CF072B611E8B42C14 /* JSONResponseSanitizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONResponseSanitizer.swift; sourceTree = "<group>"; };
 		89357AF287FEB220A98CF198 /* CuratedAmazonRecommendationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CuratedAmazonRecommendationService.swift; sourceTree = "<group>"; };
 		9370E8E6F0680794CAE2B86E /* OpenRouterVisualizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRouterVisualizationService.swift; sourceTree = "<group>"; };
 		93FC4E00C5DF6995D282D33C /* VisualizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualizationService.swift; sourceTree = "<group>"; };
@@ -371,7 +375,7 @@
 		7E9F5CC1A4D24CFBF86F8627 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				80776E04CAEC8CD0E53D2BB0 /* Reset My Space.app */,
+				80776E04CAEC8CD0E53D2BB0 /* REASON.app */,
 				F074B501A53C5F22D6468953 /* REASONTests.xctest */,
 			);
 			name = Products;
@@ -427,6 +431,7 @@
 			isa = PBXGroup;
 			children = (
 				D242F410324E55E21A1E926C /* AppError.swift */,
+				87D43F9CF072B611E8B42C14 /* JSONResponseSanitizer.swift */,
 				86F0BB6265620BC158126442 /* SampleSeed.swift */,
 			);
 			path = Utils;
@@ -496,6 +501,7 @@
 				421186892B34E0C9C64C99B9 /* AnthropicCoachingProvider.swift */,
 				D27B48D63076FAA4B376BD32 /* MockAIAnalysisService.swift */,
 				2C936682ECA9A47E904CF84A /* OpenAIAnalysisProvider.swift */,
+				66F4A58FD8AE184862334F8B /* OpenAIAnthropicAnalysisService.swift */,
 				8780F2FF7098309A4E2EF513 /* OpenRouterAnalysisService.swift */,
 				C3582F4C6F82364F84C26BC6 /* OpenRouterClient.swift */,
 				0AFAF2FED20FDE37AF39D87F /* ScoreEngine.swift */,
@@ -549,7 +555,7 @@
 				2FC1863D384CEF546340C792 /* Supabase */,
 			);
 			productName = REASON;
-			productReference = 80776E04CAEC8CD0E53D2BB0 /* Reset My Space.app */;
+			productReference = 80776E04CAEC8CD0E53D2BB0 /* REASON.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -560,6 +566,11 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					950AD2082F8CF7561871807A = {
+						DevelopmentTeam = "Dustin Schaaf";
+					};
+				};
 			};
 			buildConfigurationList = D2B0762FE4B18B578B3A9EAE /* Build configuration list for PBXProject "Reset-My-Space" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -574,6 +585,7 @@
 			packageReferences = (
 				524E990DA5DE2CF2379A322D /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -626,6 +638,7 @@
 				26368AB7442323E09ACE8559 /* DomainModels.swift in Sources */,
 				94C197E95E11FC7F36A19DC2 /* FileBackedProjectRepository.swift in Sources */,
 				69D7268524CAA912A1D7CCF2 /* HomeView.swift in Sources */,
+				13CE5F6F82A5D4393E78C7BD /* JSONResponseSanitizer.swift in Sources */,
 				DCFBC2B217C99B873CDC5F4C /* MainTabView.swift in Sources */,
 				F0B2F76F890B33A9E96C4871 /* MetricBarView.swift in Sources */,
 				58D450E0056987BF525CA7F9 /* MockAIAnalysisService.swift in Sources */,
@@ -633,6 +646,7 @@
 				A0644B780B5B82F1AC1AB8EA /* MockVisualizationService.swift in Sources */,
 				605502C6C92A4B4053E89A96 /* OnboardingView.swift in Sources */,
 				5A7DD7B696D2BA872F617D02 /* OpenAIAnalysisProvider.swift in Sources */,
+				2682634B50720B05B2C96BB8 /* OpenAIAnthropicAnalysisService.swift in Sources */,
 				D21F97C0328091D8F3829942 /* OpenRouterAnalysisService.swift in Sources */,
 				CEAEFF410F8049F187F0A61E /* OpenRouterClient.swift in Sources */,
 				0BB754ED7B692CBFBC99CEE5 /* OpenRouterProductRecommendationService.swift in Sources */,
@@ -708,11 +722,10 @@
 			buildSettings = {
 				APPCATEGORY = productivity;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = REASON/REASON.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = REASON/Resources/PreviewData;
-				DEVELOPMENT_TEAM = 286LKF859M;
+				DEVELOPMENT_TEAM = "Dustin Schaaf";
 				DISPLAY_NAME = "Reset My Space";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = REASON/Config/Info.plist;
@@ -854,11 +867,10 @@
 			buildSettings = {
 				APPCATEGORY = productivity;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = REASON/REASON.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = REASON/Resources/PreviewData;
-				DEVELOPMENT_TEAM = 286LKF859M;
+				DEVELOPMENT_TEAM = "Dustin Schaaf";
 				DISPLAY_NAME = "Reset My Space";
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = REASON/Config/Info.plist;

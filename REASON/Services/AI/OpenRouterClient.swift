@@ -48,12 +48,40 @@ struct OpenRouterClient: Sendable {
             let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
             let choices = json["choices"] as? [[String: Any]],
             let first = choices.first,
-            let message = first["message"] as? [String: Any],
-            let content = message["content"] as? String
+            let message = first["message"] as? [String: Any]
         else {
             throw AppError.parsing("Unexpected OpenRouter chat response structure.")
         }
-        return content
+
+        if let content = message["content"] as? String {
+            return content
+        }
+
+        if let contentParts = message["content"] as? [[String: Any]] {
+            let text = contentParts.compactMap { part -> String? in
+                if let directText = part["text"] as? String {
+                    return directText
+                }
+
+                if
+                    let type = part["type"] as? String,
+                    type == "text",
+                    let textPayload = part["text"] as? String
+                {
+                    return textPayload
+                }
+
+                return nil
+            }
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if !text.isEmpty {
+                return text
+            }
+        }
+
+        throw AppError.parsing("Unexpected OpenRouter chat response structure.")
     }
 
     private func extractImageURL(from data: Data) throws -> URL {

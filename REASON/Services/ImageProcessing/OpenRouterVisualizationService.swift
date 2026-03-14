@@ -10,7 +10,7 @@ final class OpenRouterVisualizationService: VisualizationService {
     // generateVisualization() gracefully returns a text-only concept when image gen fails.
     // To enable real image generation, integrate a separate provider (e.g. Replicate, Together AI).
     private var imageModel: String {
-        // Placeholder — all paths currently return text-only concept gracefully
+        // Placeholder until a real image-capable provider is wired in.
         return "openrouter/unavailable"
     }
 
@@ -30,6 +30,7 @@ final class OpenRouterVisualizationService: VisualizationService {
         )
 
         guard !client.apiKey.isEmpty else { return base }
+        guard imageModel != "openrouter/unavailable" else { return base }
 
         let imagePromptText = buildImagePrompt(for: project, concept: base)
         let payload: [String: Any] = [

@@ -31,21 +31,40 @@ struct AppContainer {
             associateTag: config.amazonAssociateTag.isEmpty ? "Reasonhome-20" : config.amazonAssociateTag
         )
 
-        let analysisService = AIRouterService(
-            primary: OpenRouterAnalysisService(client: openRouterClient, qualityMode: qualityMode),
-            fallback: MockAIAnalysisService()
-        )
+        let mockAnalysisService = MockAIAnalysisService()
+        let openAIFallback: AIAnalysisService? = config.hasOpenAIKey
+            ? OpenAIAnthropicAnalysisService(
+                analyzer: OpenAIAnalysisProvider(config: config),
+                coachingProvider: config.hasAnthropicKey ? AnthropicCoachingProvider(config: config) : nil
+            )
+            : nil
 
-        let productRecommendationService = OpenRouterProductRecommendationService(
-            client: openRouterClient,
-            linkBuilder: linkBuilder,
-            qualityMode: qualityMode
-        )
+        let analysisService: AIAnalysisService
+        if config.hasOpenRouterKey {
+            analysisService = AIRouterService(
+                primary: OpenRouterAnalysisService(client: openRouterClient, qualityMode: qualityMode),
+                fallback: openAIFallback ?? mockAnalysisService
+            )
+        } else if let openAIFallback {
+            analysisService = openAIFallback
+        } else {
+            analysisService = mockAnalysisService
+        }
 
-        let visualizationService = OpenRouterVisualizationService(
-            client: openRouterClient,
-            qualityMode: qualityMode
-        )
+        let productRecommendationService: ProductRecommendationService = config.hasOpenRouterKey
+            ? OpenRouterProductRecommendationService(
+                client: openRouterClient,
+                linkBuilder: linkBuilder,
+                qualityMode: qualityMode
+            )
+            : CuratedAmazonRecommendationService(linkBuilder: linkBuilder)
+
+        let visualizationService: VisualizationService = config.hasOpenRouterKey
+            ? OpenRouterVisualizationService(
+                client: openRouterClient,
+                qualityMode: qualityMode
+            )
+            : MockVisualizationService()
 
         return AppContainer(
             config: config,

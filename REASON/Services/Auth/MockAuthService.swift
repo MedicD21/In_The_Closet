@@ -3,6 +3,9 @@ import Foundation
 final class MockAuthService: AuthService {
     private let storageKey = "reason.mock.user"
 
+    let supportsAppleSignIn = true
+    let supportsGoogleSignIn = true
+
     func restoreSession() async -> UserProfile? {
         guard let data = UserDefaults.standard.data(forKey: storageKey) else {
             return nil

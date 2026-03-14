@@ -153,7 +153,7 @@ final class OpenAIAnalysisProvider: OpenAIAnalyzing {
             let first = choices.first,
             let message = first["message"] as? [String: Any],
             let content = message["content"] as? String,
-            let contentData = content.data(using: .utf8),
+            let contentData = JSONResponseSanitizer.clean(content).data(using: .utf8),
             let parsed = try JSONSerialization.jsonObject(with: contentData) as? [String: Any]
         else {
             throw AppError.parsing("Could not parse OpenAI response structure.")

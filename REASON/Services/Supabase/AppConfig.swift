@@ -28,14 +28,30 @@ struct AppConfig {
     }
 
     var isSupabaseConfigured: Bool {
-        URL(string: supabaseURL) != nil && !supabaseAnonKey.isEmpty
+        guard
+            isConfigured(supabaseURL, rejecting: ["https://your-project.supabase.co"]),
+            let url = URL(string: supabaseURL),
+            let scheme = url.scheme?.lowercased(),
+            ["http", "https"].contains(scheme),
+            url.host != nil
+        else {
+            return false
+        }
+
+        return isConfigured(supabaseAnonKey, rejecting: ["your-supabase-anon-key"])
     }
 
-    var hasOpenAIKey: Bool { !openAIAPIKey.isEmpty }
-    var hasAnthropicKey: Bool { !anthropicAPIKey.isEmpty }
-    var hasOpenRouterKey: Bool { !openRouterAPIKey.isEmpty }
+    var hasOpenAIKey: Bool { isConfigured(openAIAPIKey, rejecting: ["your-openai-api-key"]) }
+    var hasAnthropicKey: Bool { isConfigured(anthropicAPIKey, rejecting: ["your-anthropic-api-key"]) }
+    var hasOpenRouterKey: Bool { isConfigured(openRouterAPIKey, rejecting: ["your-openrouter-api-key"]) }
 
     var amazonBaseURL: URL {
         URL(string: amazonAffiliateBaseURL) ?? URL(string: "https://www.amazon.com")!
+    }
+
+    private func isConfigured(_ value: String, rejecting placeholders: Set<String> = []) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !trimmed.hasPrefix("$(") else { return false }
+        return !placeholders.contains(trimmed)
     }
 }

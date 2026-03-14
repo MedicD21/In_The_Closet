@@ -33,7 +33,7 @@ final class OpenRouterAnalysisService: AIAnalysisService {
             throw AppError.configuration("OPENROUTER_API_KEY is not configured.")
         }
 
-        print("🤖 [OpenRouter] Starting analysis — key prefix: \(String(client.apiKey.prefix(12)))...")
+        print("🤖 [OpenRouter] Starting analysis")
         print("🤖 [OpenRouter] Stage 1 model: \(visionModel)")
 
         // Stage 1: Vision analysis
@@ -187,8 +187,9 @@ final class OpenRouterAnalysisService: AIAnalysisService {
     // MARK: - Parsing
 
     private func parseStage2(_ content: String, request: AnalysisRequest) throws -> SpaceAnalysis {
+        let normalizedContent = JSONResponseSanitizer.clean(content)
         guard
-            let contentData = content.data(using: .utf8),
+            let contentData = normalizedContent.data(using: .utf8),
             let parsed = try JSONSerialization.jsonObject(with: contentData) as? [String: Any]
         else {
             throw AppError.parsing("Could not parse OpenRouter planner response.")
