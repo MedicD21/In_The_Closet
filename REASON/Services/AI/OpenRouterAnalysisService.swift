@@ -33,11 +33,18 @@ final class OpenRouterAnalysisService: AIAnalysisService {
             throw AppError.configuration("OPENROUTER_API_KEY is not configured.")
         }
 
+        print("🤖 [OpenRouter] Starting analysis — key prefix: \(String(client.apiKey.prefix(12)))...")
+        print("🤖 [OpenRouter] Stage 1 model: \(visionModel)")
+
         // Stage 1: Vision analysis
         let visionJSON = try await runStage1(request: request)
+        print("🤖 [OpenRouter] Stage 1 complete (\(visionJSON.count) chars)")
+        print("🤖 [OpenRouter] Stage 2 model: \(plannerModel)")
 
         // Stage 2: Organization planner → full SpaceAnalysis (coaching included)
-        return try await runStage2(request: request, visionJSON: visionJSON)
+        let result = try await runStage2(request: request, visionJSON: visionJSON)
+        print("🤖 [OpenRouter] Stage 2 complete — score: \(result.score.totalScore)")
+        return result
     }
 
     // MARK: - Stage 1: Vision Analysis

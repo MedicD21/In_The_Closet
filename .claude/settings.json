@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/dustinschaaf/Code/REASON && xcodegen generate --quiet 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

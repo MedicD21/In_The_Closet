@@ -14,9 +14,9 @@ final class AIRouterService: AIAnalysisService {
         do {
             return try await primary.analyze(request: request)
         } catch {
-            var fallbackAnalysis = try await fallback.analyze(request: request)
-            fallbackAnalysis.confidenceNotes.append("Using built-in scaffold — live provider unavailable: \(error.localizedDescription)")
-            return fallbackAnalysis
+            print("⚠️ [AIRouterService] Primary provider failed: \(error)")
+            // Re-throw so the user sees the real error rather than silent mock fallback
+            throw error
         }
     }
 }

@@ -1,4 +1,4 @@
-name: Reset My Space
+name: Reset-My-Space
 options:
   bundleIdPrefix: com.dustinschaaf
   createIntermediateGroups: true
