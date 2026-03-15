@@ -69,6 +69,7 @@
 		DB82366D8B07E485E852638A /* ProjectImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57F4B08C6FB4DF4CB1B64E6A /* ProjectImageView.swift */; };
 		DCFBC2B217C99B873CDC5F4C /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA200B54EA27C81F92128E5 /* MainTabView.swift */; };
 		E765FC8D049464F988E108F9 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65E9EA06A32AF181BBCC8651 /* AuthView.swift */; };
+		ED75E988874A8A9433437E94 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DC2CF337EE70BC3960AEE641 /* LaunchScreen.storyboard */; };
 		F0B2F76F890B33A9E96C4871 /* MetricBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CFEE98CB41D6EC6F831FEE0 /* MetricBarView.swift */; };
 		F1FCE8644482FD9F1B78384E /* AIAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 595276CE67030143F7596B46 /* AIAnalysisService.swift */; };
 		F4F234A941F7E7AFBDA06C82 /* SupabaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2695624BE8166ED59C03C11C /* SupabaseAuthService.swift */; };
@@ -150,6 +151,7 @@
 		D242F410324E55E21A1E926C /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = "<group>"; };
 		D27B48D63076FAA4B376BD32 /* MockAIAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAIAnalysisService.swift; sourceTree = "<group>"; };
 		D64727F80FC7839C9FC554FC /* DomainModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainModels.swift; sourceTree = "<group>"; };
+		DC2CF337EE70BC3960AEE641 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		DCB38922483CB21545C06050 /* SupabaseProjectRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseProjectRepository.swift; sourceTree = "<group>"; };
 		DD148AEA11FEC878D7659BC8 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		E711A6B06F8B68FC16B065A5 /* BrandButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandButton.swift; sourceTree = "<group>"; };
@@ -489,6 +491,7 @@
 			isa = PBXGroup;
 			children = (
 				9D964C6B67966E64CD9F31B5 /* Assets.xcassets */,
+				DC2CF337EE70BC3960AEE641 /* LaunchScreen.storyboard */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -601,6 +604,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				88390053BEACC7C76D826102 /* Assets.xcassets in Resources */,
+				ED75E988874A8A9433437E94 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

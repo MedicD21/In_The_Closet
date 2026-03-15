@@ -1,37 +1,35 @@
 import SwiftUI
+import UIKit
 
 struct SplashView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     var body: some View {
-        VStack(spacing: 28) {
-            Spacer()
+        SplashArtworkView()
+            .ignoresSafeArea()
+    }
+}
 
-            VStack(spacing: 12) {
-                Text("Reset My Space")
-                    .font(.system(size: 54, weight: .bold, design: .serif))
-                    .foregroundStyle(colorScheme == .dark ? BrandColor.gold : BrandColor.teal)
+private struct SplashArtworkView: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let container = UIView()
+        container.backgroundColor = UIColor(named: "SplashBackground")
 
-                Text("By REASON")
-                    .font(BrandTypography.caption)
-                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+        let imageView = UIImageView(image: UIImage(named: "RMS_Splash"))
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
 
-                Text("Find your space again.")
-                    .font(BrandTypography.body)
-                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+        container.addSubview(imageView)
 
-                Text("Staging + organizational support with a calmer plan forward.")
-                    .font(BrandTypography.caption)
-                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-            }
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: container.topAnchor),
+            imageView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            imageView.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
 
-            ReferenceImageView(assetName: "ResultsMockup", bundleFileName: "results-mockup", fileExtension: "png")
-                .scaledToFit()
-                .frame(maxWidth: 280)
-                .shadow(color: Color.black.opacity(0.12), radius: 20, x: 0, y: 12)
+        return container
+    }
 
-            Spacer()
-        }
-        .padding(24)
+    func updateUIView(_ uiView: UIView, context: Context) {
     }
 }
