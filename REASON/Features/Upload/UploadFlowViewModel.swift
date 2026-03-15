@@ -67,38 +67,60 @@ final class UploadFlowViewModel: ObservableObject {
     func runAnalysis() async {
         step = .analyzing
         errorMessage = nil
+        AppConsole.analysis.notice("upload flow analyze requested mode=\(self.draft.mode.rawValue, privacy: .public) space=\(self.draft.spaceType.rawValue, privacy: .public)")
 
         do {
+            guard let analysisImageData = resolvedAnalysisImageData() else {
+                throw AppError.validation("Choose a photo before starting a live analysis.")
+            }
+            AppConsole.analysis.notice("analysis source image bytes=\(analysisImageData.count, privacy: .public)")
+
             var analysis = try await container.analysisService.analyze(
                 request: AnalysisRequest(
                     projectID: existingProject?.id,
                     spaceType: draft.spaceType,
                     customSpaceName: draft.customSpaceName.isEmpty ? nil : draft.customSpaceName,
                     mode: draft.mode,
-                    imageData: draft.selectedImageData,
+                    imageData: analysisImageData,
                     previousAnalysis: existingProject?.latestAnalysis
                 )
             )
+            AppConsole.analysis.notice("analysis finished score=\(analysis.score.totalScore, privacy: .public) resetMinutes=\(analysis.estimatedResetMinutes, privacy: .public)")
 
-            analysis.budgetRecommendations = await container.productRecommendationService.recommendations(
-                for: RecommendationContext(
-                    spaceType: draft.spaceType,
-                    mode: draft.mode,
-                    analysisID: analysis.id,
-                    problems: analysis.biggestProblems,
-                    opportunities: analysis.bestOpportunities
+            do {
+                analysis.budgetRecommendations = try await container.productRecommendationService.recommendations(
+                    for: RecommendationContext(
+                        spaceType: draft.spaceType,
+                        mode: draft.mode,
+                        analysisID: analysis.id,
+                        problems: analysis.biggestProblems,
+                        opportunities: analysis.bestOpportunities
+                    )
                 )
-            )
+                let totalRecommendationItems = analysis.budgetRecommendations.reduce(0) { $0 + $1.items.count }
+                AppConsole.recommendations.notice("analysis received \(totalRecommendationItems, privacy: .public) recommendation items")
+            } catch {
+                AppConsole.recommendations.error("shopping suggestions unavailable: \(error.localizedDescription, privacy: .public)")
+                analysis.confidenceNotes.append("Live shopping suggestions were unavailable for this run: \(error.localizedDescription)")
+            }
 
             let builtProject = buildProject(with: analysis)
-            analysis.visualizationConcept = try? await container.visualizationService.generateVisualization(for: builtProject, analysis: analysis)
+            do {
+                analysis.visualizationConcept = try await container.visualizationService.generateVisualization(for: builtProject, analysis: analysis)
+                AppConsole.visualization.notice("analysis received generated concept image=\((analysis.visualizationConcept?.generatedImageURL != nil), privacy: .public)")
+            } catch {
+                AppConsole.visualization.error("concept render unavailable: \(error.localizedDescription, privacy: .public)")
+                analysis.confidenceNotes.append("Live concept render was unavailable for this run: \(error.localizedDescription)")
+            }
 
             let finalizedProject = buildProject(with: analysis)
             project = finalizedProject
             comparison = makeComparisonIfNeeded(for: finalizedProject)
             self.analysis = analysis
             step = .results
+            AppConsole.analysis.notice("upload flow transitioned to results")
         } catch {
+            AppConsole.analysis.error("analysis flow failed: \(error.localizedDescription, privacy: .public)")
             errorMessage = error.localizedDescription
             step = .upload
         }
@@ -197,12 +219,26 @@ final class UploadFlowViewModel: ObservableObject {
         }
 
         guard let imageData = draft.selectedImageData else { return nil }
+        let persistedData = ReferenceImageLoader.normalizedJPEGData(from: imageData) ?? imageData
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             .appendingPathComponent("reason/images", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let fileURL = directory.appendingPathComponent("\(UUID().uuidString).jpg")
-        try? imageData.write(to: fileURL, options: .atomic)
+        try? persistedData.write(to: fileURL, options: .atomic)
         persistedImagePath = fileURL.path
         return persistedImagePath
+    }
+
+    private func resolvedAnalysisImageData() -> Data? {
+        if let selectedImageData = draft.selectedImageData {
+            return ReferenceImageLoader.normalizedJPEGData(from: selectedImageData) ?? selectedImageData
+        }
+
+        guard let imageAssetName = draft.imageAssetName else {
+            return nil
+        }
+
+        let imageData = ReferenceImageLoader.imageData(named: imageAssetName)
+        return imageData.flatMap { ReferenceImageLoader.normalizedJPEGData(from: $0) ?? $0 }
     }
 }

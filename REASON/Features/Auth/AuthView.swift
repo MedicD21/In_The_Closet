@@ -8,15 +8,17 @@ struct AuthView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                VStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 12) {
+                    TagChip(title: "Secure sync for your spaces", accent: BrandColor.teal)
                     Text("Welcome back to Reset My Space")
                         .font(BrandTypography.screenTitle)
                         .foregroundStyle(BrandColor.primaryText(for: colorScheme))
                     Text("Sign in to save projects, compare progress, and build staged shopping lists over time.")
                         .font(BrandTypography.body)
                         .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                        .multilineTextAlignment(.center)
+                        .multilineTextAlignment(.leading)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 56)
 
                 BrandCard {
@@ -48,7 +50,10 @@ struct AuthView: View {
                 }
 
                 BrandCard {
-                    VStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Other sign-in options")
+                            .font(BrandTypography.bodyStrong)
+                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
                         if appModel.container.authService.supportsAppleSignIn {
                             socialButton(title: "Continue with Apple", symbol: "apple.logo") {
                                 Task {
@@ -63,14 +68,20 @@ struct AuthView: View {
                                 }
                             }
                         }
-                        Button("Continue as Guest") {
-                            Task {
-                                let user = await viewModel.continueAsGuest(using: appModel.container.authService)
-                                await appModel.signIn(user: user)
+                        if appModel.container.authService.supportsGuestAccess {
+                            Button("Continue as Guest") {
+                                Task {
+                                    do {
+                                        let user = try await viewModel.continueAsGuest(using: appModel.container.authService)
+                                        await appModel.signIn(user: user)
+                                    } catch {
+                                        appModel.notice = AppNotice(title: "Couldn't Continue", message: error.localizedDescription)
+                                    }
+                                }
                             }
+                            .font(BrandTypography.bodyStrong)
+                            .foregroundStyle(BrandColor.teal)
                         }
-                        .font(BrandTypography.bodyStrong)
-                        .foregroundStyle(BrandColor.teal)
                     }
                 }
 
@@ -78,7 +89,7 @@ struct AuthView: View {
                     Task {
                         do {
                             try await viewModel.resetPassword(using: appModel.container.authService)
-                            appModel.notice = AppNotice(title: "Email Ready", message: "Password reset is scaffolded. Wire the live provider to send production reset emails.")
+                            appModel.notice = AppNotice(title: "Reset Email Sent", message: "Check your inbox for the password reset link.")
                         } catch {
                             appModel.notice = AppNotice(title: "Couldn't Start Reset", message: error.localizedDescription)
                         }
@@ -106,7 +117,7 @@ struct AuthView: View {
             let user = try await viewModel.signInWithApple(using: appModel.container.authService)
             await appModel.signIn(user: user)
         } catch {
-            appModel.notice = AppNotice(title: "Apple Sign-In Needs Finishing", message: error.localizedDescription)
+            appModel.notice = AppNotice(title: "Couldn't Complete Apple Sign-In", message: error.localizedDescription)
         }
     }
 
@@ -115,7 +126,7 @@ struct AuthView: View {
             let user = try await viewModel.signInWithGoogle(using: appModel.container.authService)
             await appModel.signIn(user: user)
         } catch {
-            appModel.notice = AppNotice(title: "Google Sign-In Needs Finishing", message: error.localizedDescription)
+            appModel.notice = AppNotice(title: "Couldn't Complete Google Sign-In", message: error.localizedDescription)
         }
     }
 
@@ -125,7 +136,14 @@ struct AuthView: View {
             .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
             .autocorrectionDisabled(keyboard == .emailAddress)
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 18).fill(BrandColor.elevatedBackground(for: colorScheme)))
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(BrandColor.elevatedBackground(for: colorScheme))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+                    )
+            )
             .foregroundStyle(BrandColor.primaryText(for: colorScheme))
     }
 
@@ -133,7 +151,14 @@ struct AuthView: View {
         SecureField(title, text: text)
             .textInputAutocapitalization(.never)
             .padding(16)
-            .background(RoundedRectangle(cornerRadius: 18).fill(BrandColor.elevatedBackground(for: colorScheme)))
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(BrandColor.elevatedBackground(for: colorScheme))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+                    )
+            )
             .foregroundStyle(BrandColor.primaryText(for: colorScheme))
     }
 
@@ -149,8 +174,12 @@ struct AuthView: View {
             .foregroundStyle(BrandColor.primaryText(for: colorScheme))
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(BrandColor.elevatedBackground(for: colorScheme))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+                    )
             )
         }
         .buttonStyle(.plain)

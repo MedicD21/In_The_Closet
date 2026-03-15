@@ -8,14 +8,16 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 24) {
                 header
                 heroCard
                 spaceTypeSection
                 recentProjectsSection
                 inspirationSection
             }
-            .padding(20)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 30)
         }
         .navigationTitle("")
         .toolbar(.hidden, for: .navigationBar)
@@ -31,15 +33,16 @@ struct HomeView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
+            TagChip(title: "AI-guided reset studio", accent: BrandColor.gold)
             Text("Reset My Space")
                 .font(BrandTypography.brandTitle)
                 .foregroundStyle(colorScheme == .dark ? BrandColor.gold : BrandColor.teal)
             Text("By REASON")
                 .font(BrandTypography.caption)
                 .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-            Text("Find your space again.")
-                .font(BrandTypography.bodyStrong)
+            Text("Sharper guidance for real rooms, calmer surfaces, and budget-friendly resets that still feel doable.")
+                .font(BrandTypography.body)
                 .foregroundStyle(BrandColor.primaryText(for: colorScheme))
         }
     }
@@ -47,12 +50,37 @@ struct HomeView: View {
     private var heroCard: some View {
         BrandCard {
             VStack(alignment: .leading, spacing: 18) {
-                Text("Start with one small space.")
-                    .font(BrandTypography.screenTitle)
-                    .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+                HStack(alignment: .top, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Start with one small space.")
+                            .font(BrandTypography.caption)
+                            .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+                        Text("Modern resets that feel realistic.")
+                            .font(BrandTypography.screenTitle)
+                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "sparkles.rectangle.stack.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(BrandColor.teal)
+                        .frame(width: 48, height: 48)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(BrandColor.softTeal.opacity(colorScheme == .dark ? 0.18 : 0.2))
+                        )
+                }
+
                 Text("Upload a photo, get a supportive score, and build a polished reset plan with shopping suggestions that feel doable.")
                     .font(BrandTypography.body)
                     .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    HomeFeatureBadge(title: "Live analysis", systemImage: "waveform.path.ecg", accent: BrandColor.teal)
+                    HomeFeatureBadge(title: "Budget paths", systemImage: "dollarsign.circle", accent: BrandColor.gold)
+                    HomeFeatureBadge(title: "Concept preview", systemImage: "photo.on.rectangle", accent: BrandColor.coral)
+                }
 
                 PrimaryActionButton("Upload a Photo", systemImage: "camera.fill") {
                     uploadDraft = UploadDraft()
@@ -72,20 +100,40 @@ struct HomeView: View {
                 } label: {
                     HStack(spacing: 14) {
                         Image(systemName: type.iconName)
-                            .frame(width: 34, height: 34)
-                            .background(BrandColor.gold.opacity(0.18))
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+                            .frame(width: 42, height: 42)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(BrandColor.gold.opacity(colorScheme == .dark ? 0.18 : 0.2))
+                            )
                         Text(type.displayName)
                             .font(BrandTypography.bodyStrong)
+                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.bold))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+                            .frame(width: 30, height: 30)
+                            .background(
+                                Circle()
+                                    .fill(BrandColor.elevatedBackground(for: colorScheme))
+                            )
                     }
                     .padding(18)
                     .background(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .fill(BrandColor.surface(for: colorScheme))
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [BrandColor.surface(for: colorScheme), BrandColor.secondarySurface(for: colorScheme)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                    .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+                            )
                     )
                 }
                 .buttonStyle(.plain)
@@ -143,5 +191,35 @@ struct HomeView: View {
                     .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
             }
         }
+    }
+}
+
+private struct HomeFeatureBadge: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let title: String
+    let systemImage: String
+    let accent: Color
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(accent)
+            Text(title)
+                .font(BrandTypography.caption)
+                .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(BrandColor.elevatedBackground(for: colorScheme))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+                )
+        )
     }
 }

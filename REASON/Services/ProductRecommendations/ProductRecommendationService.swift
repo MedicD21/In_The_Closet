@@ -10,5 +10,5 @@ struct RecommendationContext: Hashable {
 
 @MainActor
 protocol ProductRecommendationService {
-    func recommendations(for context: RecommendationContext) async -> [BudgetRecommendation]
+    func recommendations(for context: RecommendationContext) async throws -> [BudgetRecommendation]
 }

@@ -9,7 +9,7 @@ struct SettingsView: View {
         List {
             Section("Account") {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(appModel.currentUser?.displayName ?? "Guest")
+                    Text(appModel.currentUser?.displayName ?? "Not signed in")
                         .font(BrandTypography.bodyStrong)
                     Text(appModel.currentUser?.email ?? "Not signed in")
                         .font(BrandTypography.caption)
@@ -23,7 +23,7 @@ struct SettingsView: View {
                         await appModel.signOut()
                     }
                 }
-                Button("Delete Account Scaffold", role: .destructive) {
+                Button("Delete Account", role: .destructive) {
                     Task {
                         await appModel.deleteAccount()
                     }
@@ -36,8 +36,8 @@ struct SettingsView: View {
                 LabeledContent("Tone", value: appModel.currentUser?.preferredTone.capitalized ?? "Warm")
             }
 
-            Section("Scaffolding Notes") {
-                Text("Supabase auth, storage syncing, and live AI endpoint parsing are structured in the codebase and ready for the final production integration pass.")
+            Section("Live Services") {
+                Text("Auth, analysis, shopping suggestions, and concept previews now use live providers. Full project detail is still cached on this device while cloud sync expands.")
                     .font(BrandTypography.caption)
                     .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
             }

@@ -21,13 +21,16 @@ final class OpenRouterProductRecommendationService: ProductRecommendationService
         self.qualityMode = qualityMode
     }
 
-    func recommendations(for context: RecommendationContext) async -> [BudgetRecommendation] {
-        guard !client.apiKey.isEmpty else { return curatedFallback(for: context) }
-        do {
-            return try await aiRecommendations(for: context)
-        } catch {
-            return curatedFallback(for: context)
+    func recommendations(for context: RecommendationContext) async throws -> [BudgetRecommendation] {
+        guard !client.apiKey.isEmpty else {
+            throw AppError.configuration("OPENROUTER_API_KEY is not configured for live product recommendations.")
         }
+
+        AppConsole.recommendations.notice("starting recommendation request analysisID=\(context.analysisID.uuidString, privacy: .public) space=\(context.spaceType.rawValue, privacy: .public) mode=\(context.mode.rawValue, privacy: .public)")
+        let recommendations = try await aiRecommendations(for: context)
+        let totalItemCount = recommendations.reduce(0) { $0 + $1.items.count }
+        AppConsole.recommendations.notice("recommendation request complete tiers=\(recommendations.count, privacy: .public) items=\(totalItemCount, privacy: .public)")
+        return recommendations
     }
 
     // MARK: - Stage 3: AI-driven recommendations
@@ -118,46 +121,6 @@ final class OpenRouterProductRecommendationService: ProductRecommendationService
                 whyItHelps: whyItHelps,
                 expectedImpactOnScore: "Targets specific issues found in your \(context.spaceType.displayName.lowercased()).",
                 items: products
-            )
-        }
-    }
-
-    // MARK: - Curated fallback
-
-    private func curatedFallback(for context: RecommendationContext) -> [BudgetRecommendation] {
-        let tierDefinitions: [(BudgetTier, Decimal, String)] = [
-            (.budget, 55, "Fast essentials that create the clearest lift per dollar."),
-            (.mid, 135, "A cleaner, more durable setup with better visual consistency."),
-            (.premium, 295, "The most cohesive, polished version of the reset.")
-        ]
-
-        return tierDefinitions.map { tier, total, explanation in
-            let keywords = context.spaceType.searchKeywords
-            let count = tier == .budget ? 2 : tier == .mid ? 3 : 4
-            let cats: [RecommendationCategory] = [.containment, .labels, .risers, .baskets]
-            let items = keywords.prefix(count).enumerated().map { idx, query -> ProductRecommendation in
-                ProductRecommendation(
-                    id: UUID(),
-                    analysisID: context.analysisID,
-                    category: cats[idx % cats.count],
-                    budgetTier: tier,
-                    itemTitle: query.capitalized,
-                    amazonURL: linkBuilder.searchURL(for: query),
-                    asin: nil,
-                    imageURL: nil,
-                    price: Decimal(12 + (idx * 7)),
-                    reasonText: "Useful for \(context.spaceType.displayName.lowercased()) resets.",
-                    expectedImpact: "Cleaner categories and faster resets.",
-                    retailer: .amazon
-                )
-            }
-            return BudgetRecommendation(
-                id: UUID(),
-                budgetTier: tier,
-                estimatedTotalSpend: total,
-                whyItHelps: explanation,
-                expectedImpactOnScore: "Immediate usability gains.",
-                items: Array(items)
             )
         }
     }

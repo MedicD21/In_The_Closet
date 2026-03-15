@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct VisualizationView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -10,6 +11,10 @@ struct VisualizationView: View {
 
     private var sourceProjectImage: ProjectImage? {
         project.images.last ?? project.images.first
+    }
+
+    private var conceptImageURL: URL? {
+        analysis.visualizationConcept?.generatedImageURL
     }
 
     private var selectedTier: BudgetRecommendation? {
@@ -33,10 +38,10 @@ struct VisualizationView: View {
 
         return VisualizationConcept(
             projectedImprovedScore: min(100, analysis.score.totalScore + 16),
-            promptSummary: "A calmer, more cohesive \(project.title.lowercased()) with stronger zoning, edited surfaces, and storage that is easier to maintain.",
+            promptSummary: "Live concept copy was unavailable, so this summary is assembled from the analysis highlights for \(project.title.lowercased()).",
             whatImproved: improvements,
             stillNeedsWork: remainingWork,
-            conceptCaption: "Styled concept based on your current photo and recommended reset plan.",
+            conceptCaption: "Analysis-backed concept summary without a generated image render.",
             generatedImageURL: nil
         )
     }
@@ -45,6 +50,10 @@ struct VisualizationView: View {
         let highlights = concept.whatImproved.isEmpty ? analysis.bestOpportunities : concept.whatImproved
         let fallback = ["Clearer zones", "Calmer surfaces"]
         return Array((highlights.isEmpty ? fallback : highlights).prefix(2))
+    }
+
+    private var serviceNotes: [String] {
+        analysis.confidenceNotes
     }
 
     var body: some View {
@@ -80,9 +89,9 @@ struct VisualizationView: View {
                 previewPanel(title: "Concept Direction") {
                     ConceptPreviewImageView(
                         concept: concept,
-                        projectImage: sourceProjectImage,
                         budgetTier: selectedBudgetTier,
-                        highlights: conceptHighlights
+                        highlights: conceptHighlights,
+                        generatedImageURL: conceptImageURL
                     )
                     .frame(height: 240)
                 }
@@ -97,9 +106,9 @@ struct VisualizationView: View {
                 previewPanel(title: "Concept Direction") {
                     ConceptPreviewImageView(
                         concept: concept,
-                        projectImage: sourceProjectImage,
                         budgetTier: selectedBudgetTier,
-                        highlights: conceptHighlights
+                        highlights: conceptHighlights,
+                        generatedImageURL: conceptImageURL
                     )
                     .frame(height: 220)
                 }
@@ -117,6 +126,18 @@ struct VisualizationView: View {
                 Text(concept.promptSummary)
                     .font(BrandTypography.caption)
                     .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+
+                if !serviceNotes.isEmpty {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Live service notes")
+                            .font(BrandTypography.bodyStrong)
+                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+                        ForEach(serviceNotes, id: \.self) { note in
+                            bullet(note, accent: BrandColor.gold)
+                        }
+                    }
+                }
             }
         }
     }
@@ -190,9 +211,9 @@ struct VisualizationView: View {
 
 private struct ConceptPreviewImageView: View {
     let concept: VisualizationConcept
-    let projectImage: ProjectImage?
     let budgetTier: BudgetTier
     let highlights: [String]
+    let generatedImageURL: URL?
 
     private let cornerRadius: CGFloat = 26
 
@@ -244,58 +265,59 @@ private struct ConceptPreviewImageView: View {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(Color.white.opacity(0.14), lineWidth: 1)
         }
-        .overlay(alignment: .topTrailing) {
-            if concept.generatedImageURL == nil {
-                Text("Fallback Preview")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.white.opacity(0.92))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.2), in: Capsule(style: .continuous))
-                    .padding(14)
-            }
-        }
     }
 
     @ViewBuilder
     private var artwork: some View {
-        if let url = concept.generatedImageURL {
-            AsyncImage(url: url, transaction: Transaction(animation: .easeInOut(duration: 0.25))) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .empty, .failure:
-                    fallbackArtwork
-                @unknown default:
-                    fallbackArtwork
+        if let url = generatedImageURL {
+            if url.isFileURL, let uiImage = UIImage(contentsOfFile: url.path) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                AsyncImage(url: url, transaction: Transaction(animation: .easeInOut(duration: 0.25))) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .empty, .failure:
+                        unavailableArtwork
+                    @unknown default:
+                        unavailableArtwork
+                    }
                 }
             }
         } else {
-            fallbackArtwork
+            unavailableArtwork
         }
     }
 
-    private var fallbackArtwork: some View {
+    private var unavailableArtwork: some View {
         ZStack {
-            ProjectImageView(projectImage: projectImage)
-                .saturation(0.8)
-                .brightness(0.06)
-                .contrast(1.03)
-
             LinearGradient(
                 colors: [
-                    BrandColor.softTeal.opacity(0.22),
-                    Color.white.opacity(0.06),
-                    BrandColor.gold.opacity(0.18)
+                    BrandColor.softTeal.opacity(0.9),
+                    BrandColor.teal.opacity(0.82),
+                    BrandColor.gold.opacity(0.45)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
 
-            Rectangle()
-                .fill(Color.white.opacity(0.05))
+            VStack(spacing: 12) {
+                Image(systemName: "photo.badge.exclamationmark")
+                    .font(.system(size: 36, weight: .semibold))
+                    .foregroundStyle(Color.white.opacity(0.94))
+                Text("Live preview unavailable")
+                    .font(BrandTypography.bodyStrong)
+                    .foregroundStyle(Color.white)
+                Text("The app kept the concept brief, but the image provider did not return a finished render for this run.")
+                    .font(BrandTypography.caption)
+                    .foregroundStyle(Color.white.opacity(0.84))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
         }
     }
 }

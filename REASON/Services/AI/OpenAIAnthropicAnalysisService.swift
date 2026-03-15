@@ -11,9 +11,11 @@ final class OpenAIAnthropicAnalysisService: AIAnalysisService {
     }
 
     func analyze(request: AnalysisRequest) async throws -> SpaceAnalysis {
+        AppConsole.analysis.notice("starting OpenAI analysis with Anthropic coaching fallback")
         var analysis = try await analyzer.analyze(request: request)
 
         guard let coachingProvider else {
+            AppConsole.analysis.notice("no Anthropic coaching provider configured")
             return analysis
         }
 
@@ -21,8 +23,9 @@ final class OpenAIAnthropicAnalysisService: AIAnalysisService {
             let coaching = try await coachingProvider.supportiveCoaching(for: request, analysis: analysis)
             analysis.supportiveCoachingText = coaching
             analysis.providerSecondary = .anthropic
+            AppConsole.analysis.notice("Anthropic coaching attached")
         } catch {
-            print("⚠️ [OpenAIAnthropicAnalysisService] Coaching provider failed: \(error)")
+            AppConsole.analysis.error("Anthropic coaching failed: \(error.localizedDescription, privacy: .public)")
         }
 
         return analysis

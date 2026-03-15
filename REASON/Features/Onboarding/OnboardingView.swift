@@ -30,7 +30,8 @@ struct OnboardingView: View {
         VStack(spacing: 24) {
             Spacer(minLength: 20)
 
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
+                TagChip(title: "Fresh, guided, and budget-aware", accent: BrandColor.gold)
                 Text("Reset My Space")
                     .font(BrandTypography.brandTitle)
                     .foregroundStyle(colorScheme == .dark ? BrandColor.gold : BrandColor.teal)
@@ -48,12 +49,18 @@ struct OnboardingView: View {
                 ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                     BrandCard {
                         VStack(alignment: .leading, spacing: 20) {
-                            Image(systemName: step.imageName)
-                                .font(.system(size: 34, weight: .medium))
-                                .foregroundStyle(step.accent)
-                                .frame(width: 72, height: 72)
-                                .background(step.accent.opacity(0.14))
-                                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                            HStack {
+                                Image(systemName: step.imageName)
+                                    .font(.system(size: 32, weight: .medium))
+                                    .foregroundStyle(step.accent)
+                                    .frame(width: 72, height: 72)
+                                    .background(step.accent.opacity(0.14))
+                                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                                Spacer()
+                                Text("0\(index + 1)")
+                                    .font(BrandTypography.caption)
+                                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+                            }
 
                             Text(step.title)
                                 .font(BrandTypography.screenTitle)
@@ -74,7 +81,7 @@ struct OnboardingView: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
-            .frame(height: 430)
+            .frame(height: 450)
 
             PrimaryActionButton(page == steps.count - 1 ? "Get Started" : "Next") {
                 if page == steps.count - 1 {

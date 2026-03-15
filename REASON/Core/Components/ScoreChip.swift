@@ -7,7 +7,7 @@ struct ScoreChip: View {
     let title: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             Text("\(score)")
                 .font(BrandTypography.score)
                 .foregroundStyle(scoreColor)
@@ -23,10 +23,23 @@ struct ScoreChip: View {
 
             Spacer()
         }
-        .padding(18)
+        .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(scoreColor.opacity(colorScheme == .dark ? 0.18 : 0.12))
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            scoreColor.opacity(colorScheme == .dark ? 0.24 : 0.14),
+                            BrandColor.secondarySurface(for: colorScheme)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+                )
         )
     }
 

@@ -18,6 +18,11 @@ final class OpenAIAnalysisProvider: OpenAIAnalyzing {
         guard config.hasOpenAIKey else {
             throw AppError.configuration("OpenAI is not configured yet. Add OPENAI_API_KEY to enable the live provider.")
         }
+        guard request.imageData != nil else {
+            throw AppError.validation("Choose a photo before running a live analysis.")
+        }
+
+        AppConsole.analysis.notice("starting OpenAI analysis model=gpt-4o mode=\(request.mode.rawValue, privacy: .public) space=\(request.spaceType.rawValue, privacy: .public)")
 
         let prompt = buildPrompt(for: request)
         let messages = buildMessages(prompt: prompt, imageData: request.imageData)
@@ -30,7 +35,9 @@ final class OpenAIAnalysisProvider: OpenAIAnalyzing {
         ]
 
         let data = try await post(payload: payload)
-        return try parseResponse(data: data, request: request)
+        let analysis = try parseResponse(data: data, request: request)
+        AppConsole.analysis.notice("OpenAI analysis complete score=\(analysis.score.totalScore, privacy: .public) problems=\(analysis.biggestProblems.count, privacy: .public)")
+        return analysis
     }
 
     // MARK: - Prompt construction
@@ -110,18 +117,11 @@ final class OpenAIAnalysisProvider: OpenAIAnalyzing {
             ["type": "text", "text": prompt]
         ]
 
-        if let imageData {
-            let base64 = imageData.base64EncodedString()
-            content.insert([
-                "type": "image_url",
-                "image_url": ["url": "data:image/jpeg;base64,\(base64)", "detail": "high"]
-            ], at: 0)
-        } else {
-            content.insert([
-                "type": "text",
-                "text": "[No image provided — generate a plausible demonstration analysis.]"
-            ], at: 0)
-        }
+        let base64 = imageData?.base64EncodedString() ?? ""
+        content.insert([
+            "type": "image_url",
+            "image_url": ["url": "data:image/jpeg;base64,\(base64)", "detail": "high"]
+        ], at: 0)
 
         return [["role": "user", "content": content]]
     }

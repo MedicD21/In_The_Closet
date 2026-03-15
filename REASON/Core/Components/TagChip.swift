@@ -10,11 +10,15 @@ struct TagChip: View {
         Text(title)
             .font(BrandTypography.caption)
             .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
             .background(
                 Capsule(style: .continuous)
-                    .fill(accent.opacity(colorScheme == .dark ? 0.16 : 0.15))
+                    .fill(accent.opacity(colorScheme == .dark ? 0.18 : 0.14))
+                    .overlay(
+                        Capsule(style: .continuous)
+                            .stroke(accent.opacity(colorScheme == .dark ? 0.26 : 0.18), lineWidth: 1)
+                    )
             )
     }
 }

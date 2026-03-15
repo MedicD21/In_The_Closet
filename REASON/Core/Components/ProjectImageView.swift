@@ -12,7 +12,7 @@ struct ProjectImageView: View {
                     .resizable()
                     .scaledToFill()
             } else if let localAssetName = projectImage?.localAssetName {
-                if let uiImage = UIImage(named: localAssetName) ?? referenceUIImage(for: localAssetName) {
+                if let uiImage = ReferenceImageLoader.uiImage(named: localAssetName) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFill()
@@ -36,20 +36,5 @@ struct ProjectImageView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-    }
-
-    private func referenceUIImage(for localAssetName: String) -> UIImage? {
-        let mapping: [String: (String, String)] = [
-            "PantrySample": ("pantry-sample", "jpeg"),
-            "HomeMockup": ("home-mockup", "png"),
-            "ResultsMockup": ("results-mockup", "png")
-        ]
-
-        guard let file = mapping[localAssetName],
-              let url = Bundle.main.url(forResource: file.0, withExtension: file.1) else {
-            return nil
-        }
-
-        return UIImage(contentsOfFile: url.path)
     }
 }

@@ -14,7 +14,8 @@ final class AIRouterService: AIAnalysisService {
         do {
             return try await primary.analyze(request: request)
         } catch {
-            print("⚠️ [AIRouterService] Primary provider failed: \(error)")
+            AppConsole.analysis.error("primary analysis provider failed: \(error.localizedDescription, privacy: .public)")
+            AppConsole.analysis.notice("falling back to secondary analysis provider")
             return try await fallback.analyze(request: request)
         }
     }

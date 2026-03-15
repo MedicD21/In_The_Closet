@@ -62,6 +62,17 @@ struct ResultsView: View {
                     TagChip(title: "\(analysis.estimatedResetMinutes) min reset", accent: BrandColor.teal)
                     TagChip(title: ScoreInterpreter.label(for: analysis.score.totalScore), accent: BrandColor.gold)
                 }
+                if !analysis.confidenceNotes.isEmpty {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Live service notes")
+                            .font(BrandTypography.bodyStrong)
+                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+                        ForEach(analysis.confidenceNotes, id: \.self) { note in
+                            bullet(note)
+                        }
+                    }
+                }
             }
         }
     }
@@ -122,22 +133,28 @@ struct ResultsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 SectionHeader(title: "Budget Options", subtitle: "Amazon-only links with affiliate-ready search URLs")
 
-                HStack {
-                    ForEach(BudgetTier.allCases, id: \.id) { tier in
-                        Button {
-                            selectedBudgetTier = tier
-                        } label: {
-                            Text(tier.displayName)
-                                .font(BrandTypography.caption)
-                                .foregroundStyle(selectedBudgetTier == tier ? Color.white : BrandColor.primaryText(for: colorScheme))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .background(
-                                    Capsule(style: .continuous)
-                                        .fill(selectedBudgetTier == tier ? BrandColor.teal : BrandColor.elevatedBackground(for: colorScheme))
-                                )
+                if analysis.budgetRecommendations.isEmpty {
+                    Text("Live shopping suggestions were not returned for this analysis.")
+                        .font(BrandTypography.body)
+                        .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+                } else {
+                    HStack {
+                        ForEach(BudgetTier.allCases, id: \.id) { tier in
+                            Button {
+                                selectedBudgetTier = tier
+                            } label: {
+                                Text(tier.displayName)
+                                    .font(BrandTypography.caption)
+                                    .foregroundStyle(selectedBudgetTier == tier ? Color.white : BrandColor.primaryText(for: colorScheme))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .background(
+                                        Capsule(style: .continuous)
+                                            .fill(selectedBudgetTier == tier ? BrandColor.teal : BrandColor.elevatedBackground(for: colorScheme))
+                                    )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
 
@@ -161,12 +178,14 @@ struct ResultsView: View {
                     }
                 }
 
-                NavigationLink {
-                    BudgetTierSelectorView(analysis: analysis, selectedBudgetTier: $selectedBudgetTier)
-                } label: {
-                    SecondaryActionLabel(title: "Choose Budget Tier")
+                if !analysis.budgetRecommendations.isEmpty {
+                    NavigationLink {
+                        BudgetTierSelectorView(analysis: analysis, selectedBudgetTier: $selectedBudgetTier)
+                    } label: {
+                        SecondaryActionLabel(title: "Choose Budget Tier")
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -174,12 +193,14 @@ struct ResultsView: View {
     private var actionsCard: some View {
         BrandCard {
             VStack(spacing: 12) {
-                NavigationLink {
-                    ShoppingRecommendationsView(analysis: analysis, selectedBudgetTier: $selectedBudgetTier)
-                } label: {
-                    PrimaryActionLabel(title: "View Shopping Tools", systemImage: "cart.fill")
+                if !analysis.budgetRecommendations.isEmpty {
+                    NavigationLink {
+                        ShoppingRecommendationsView(analysis: analysis, selectedBudgetTier: $selectedBudgetTier)
+                    } label: {
+                        PrimaryActionLabel(title: "View Shopping Tools", systemImage: "cart.fill")
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 NavigationLink {
                     VisualizationView(analysis: analysis, project: project, selectedBudgetTier: selectedBudgetTier)
@@ -265,14 +286,22 @@ struct ShoppingRecommendationsView: View {
             VStack(alignment: .leading, spacing: 18) {
                 SectionHeader(title: "Recommended Tools", subtitle: "Amazon-only suggestions grouped by the budget path you choose")
 
-                Picker("Budget", selection: $selectedBudgetTier) {
-                    ForEach(BudgetTier.allCases, id: \.id) {
-                        Text($0.displayName).tag($0)
+                if !analysis.budgetRecommendations.isEmpty {
+                    Picker("Budget", selection: $selectedBudgetTier) {
+                        ForEach(BudgetTier.allCases, id: \.id) {
+                            Text($0.displayName).tag($0)
+                        }
                     }
+                    .pickerStyle(.segmented)
                 }
-                .pickerStyle(.segmented)
 
-                if let tier = analysis.budgetRecommendations.first(where: { $0.budgetTier == selectedBudgetTier }) {
+                if analysis.budgetRecommendations.isEmpty {
+                    BrandCard {
+                        Text("Live shopping suggestions were not returned for this analysis.")
+                            .font(BrandTypography.body)
+                            .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+                    }
+                } else if let tier = analysis.budgetRecommendations.first(where: { $0.budgetTier == selectedBudgetTier }) {
                     BrandCard {
                         VStack(alignment: .leading, spacing: 14) {
                             Text(tier.whyItHelps)

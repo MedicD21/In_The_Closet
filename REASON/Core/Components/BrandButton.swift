@@ -1,5 +1,60 @@
 import SwiftUI
 
+struct BrandPrimaryButtonChrome: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    private let cornerRadius: CGFloat = 24
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(
+                LinearGradient(
+                    colors: BrandColor.primaryGradient(for: colorScheme),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(alignment: .topTrailing) {
+                Circle()
+                    .fill(BrandColor.coral.opacity(colorScheme == .dark ? 0.24 : 0.18))
+                    .frame(width: 90, height: 90)
+                    .blur(radius: 28)
+                    .offset(x: 16, y: -24)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.18), Color.clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            )
+            .shadow(color: BrandColor.teal.opacity(colorScheme == .dark ? 0.24 : 0.18), radius: 22, x: 0, y: 12)
+    }
+}
+
+struct BrandSecondaryButtonChrome: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    private let cornerRadius: CGFloat = 22
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(BrandColor.elevatedBackground(for: colorScheme))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.14 : 0.05), radius: 16, x: 0, y: 8)
+    }
+}
+
 struct PrimaryActionButton: View {
     let title: String
     let systemImage: String?
@@ -24,14 +79,8 @@ struct PrimaryActionButton: View {
             .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
-            .background(
-                LinearGradient(
-                    colors: [BrandColor.teal, BrandColor.softTeal],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(BrandPrimaryButtonChrome())
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -50,14 +99,7 @@ struct SecondaryActionButton: View {
                 .foregroundStyle(BrandColor.primaryText(for: colorScheme))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(BrandColor.surface(for: colorScheme).opacity(0.84))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .stroke(BrandColor.divider(for: colorScheme), lineWidth: 1)
-                        )
-                )
+                .background(BrandSecondaryButtonChrome())
         }
         .buttonStyle(.plain)
     }

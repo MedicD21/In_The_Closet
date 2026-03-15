@@ -7,6 +7,7 @@ final class SupabaseAuthService: AuthService {
 
     let supportsAppleSignIn = true
     let supportsGoogleSignIn = false
+    let supportsGuestAccess = false
 
     init(clientFactory: SupabaseClientFactory) {
         self.clientFactory = clientFactory
@@ -18,6 +19,7 @@ final class SupabaseAuthService: AuthService {
         guard let client = try? clientFactory.makeClient() else { return nil }
         do {
             let session = try await client.auth.session
+            AppConsole.auth.notice("session restored from Supabase for userID=\(session.user.id.uuidString, privacy: .public)")
             do {
                 return try await fetchOrCreateProfile(
                     client: client,
@@ -26,7 +28,7 @@ final class SupabaseAuthService: AuthService {
                     authMethod: .email
                 )
             } catch {
-                print("⚠️ [SupabaseAuthService] Failed to restore profile: \(error)")
+                AppConsole.auth.error("restore profile failed: \(error.localizedDescription, privacy: .public)")
                 return bestEffortProfile(
                     userID: session.user.id,
                     email: session.user.email ?? "",
@@ -37,7 +39,7 @@ final class SupabaseAuthService: AuthService {
                 )
             }
         } catch {
-            print("⚠️ [SupabaseAuthService] Failed to restore session: \(error)")
+            AppConsole.auth.notice("no active Supabase session: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
@@ -45,9 +47,11 @@ final class SupabaseAuthService: AuthService {
     // MARK: - Email auth
 
     func signIn(email: String, password: String) async throws -> UserProfile {
+        AppConsole.auth.notice("sign in requested for email=\(email, privacy: .public)")
         let client = try clientFactory.makeClient()
         let session = try await client.auth.signIn(email: email, password: password)
         do {
+            AppConsole.auth.notice("sign in succeeded for userID=\(session.user.id.uuidString, privacy: .public)")
             return try await fetchOrCreateProfile(
                 client: client,
                 userID: session.user.id,
@@ -55,7 +59,7 @@ final class SupabaseAuthService: AuthService {
                 authMethod: .email
             )
         } catch {
-            print("⚠️ [SupabaseAuthService] Failed to fetch profile after sign-in: \(error)")
+            AppConsole.auth.error("fetch profile after sign-in failed: \(error.localizedDescription, privacy: .public)")
             return bestEffortProfile(
                 userID: session.user.id,
                 email: session.user.email ?? email,
@@ -68,14 +72,17 @@ final class SupabaseAuthService: AuthService {
     }
 
     func signUp(name: String, email: String, password: String) async throws -> UserProfile {
+        AppConsole.auth.notice("sign up requested for email=\(email, privacy: .public)")
         let client = try clientFactory.makeClient()
         let response = try await client.auth.signUp(email: email, password: password)
 
         guard let session = response.session else {
+            AppConsole.auth.notice("sign up created account pending email confirmation for email=\(email, privacy: .public)")
             throw AppError.unavailable("Account created. Check your email to confirm it, then sign in.")
         }
 
         do {
+            AppConsole.auth.notice("sign up session ready for userID=\(session.user.id.uuidString, privacy: .public)")
             return try await fetchOrCreateProfile(
                 client: client,
                 userID: session.user.id,
@@ -84,7 +91,7 @@ final class SupabaseAuthService: AuthService {
                 authMethod: .email
             )
         } catch {
-            print("⚠️ [SupabaseAuthService] Failed to create profile after sign-up: \(error)")
+            AppConsole.auth.error("create profile after sign-up failed: \(error.localizedDescription, privacy: .public)")
             return bestEffortProfile(
                 userID: session.user.id,
                 email: session.user.email ?? email,
@@ -99,6 +106,7 @@ final class SupabaseAuthService: AuthService {
     // MARK: - Apple Sign In
 
     func continueWithApple() async throws -> UserProfile {
+        AppConsole.auth.notice("apple sign-in requested")
         let coordinator = AppleSignInCoordinator()
         let result = try await coordinator.signIn()
 
@@ -109,6 +117,7 @@ final class SupabaseAuthService: AuthService {
 
         let email = result.email ?? session.user.email ?? ""
         do {
+            AppConsole.auth.notice("apple sign-in succeeded for userID=\(session.user.id.uuidString, privacy: .public)")
             return try await fetchOrCreateProfile(
                 client: client,
                 userID: session.user.id,
@@ -117,7 +126,7 @@ final class SupabaseAuthService: AuthService {
                 authMethod: .apple
             )
         } catch {
-            print("⚠️ [SupabaseAuthService] Failed to fetch Apple profile: \(error)")
+            AppConsole.auth.error("fetch Apple profile failed: \(error.localizedDescription, privacy: .public)")
             return bestEffortProfile(
                 userID: session.user.id,
                 email: email,
@@ -135,35 +144,27 @@ final class SupabaseAuthService: AuthService {
 
     // MARK: - Guest
 
-    func continueAsGuest() async -> UserProfile {
-        UserProfile(
-            id: UUID(),
-            email: "guest@reason.app",
-            displayName: "Guest",
-            avatarURL: nil,
-            createdAt: .now,
-            updatedAt: .now,
-            preferredTheme: .system,
-            preferredTone: "warm",
-            onboardingCompleted: true,
-            authMethod: .guest
-        )
+    func continueAsGuest() async throws -> UserProfile {
+        throw AppError.unavailable("Guest mode is disabled in the live build. Sign in with email or Apple so your projects save correctly.")
     }
 
     // MARK: - Other
 
     func resetPassword(email: String) async throws {
+        AppConsole.auth.notice("password reset requested for email=\(email, privacy: .public)")
         let client = try clientFactory.makeClient()
         try await client.auth.resetPasswordForEmail(email)
+        AppConsole.auth.notice("password reset request submitted")
     }
 
     func signOut() async throws {
         let client = try clientFactory.makeClient()
         try await client.auth.signOut()
+        AppConsole.auth.notice("Supabase sign-out completed")
     }
 
     func deleteAccount() async throws {
-        throw AppError.unavailable("Account deletion should be finalized with a server-side cleanup routine before shipping.")
+        throw AppError.unavailable("Account deletion is not available yet because the storage cleanup flow has not been finalized.")
     }
 
     // MARK: - Profile helpers

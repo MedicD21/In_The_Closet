@@ -16,14 +16,8 @@ struct PrimaryActionLabel: View {
         .foregroundStyle(Color.white)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)
-        .background(
-            LinearGradient(
-                colors: [BrandColor.teal, BrandColor.softTeal],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .background(BrandPrimaryButtonChrome())
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 }
 
@@ -38,13 +32,6 @@ struct SecondaryActionLabel: View {
             .foregroundStyle(BrandColor.primaryText(for: colorScheme))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(BrandColor.surface(for: colorScheme).opacity(0.84))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(BrandColor.divider(for: colorScheme), lineWidth: 1)
-                    )
-            )
+            .background(BrandSecondaryButtonChrome())
     }
 }

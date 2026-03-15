@@ -17,13 +17,17 @@ struct AppContainer {
         let themeStore = ThemeStore()
         let clientFactory = SupabaseClientFactory(config: config)
         let localRepository = FileBackedProjectRepository()
-        let remoteRepository = config.isSupabaseConfigured
-            ? SupabaseProjectRepository(clientFactory: clientFactory)
-            : nil
-        let projectRepository = ResilientProjectRepository(primary: remoteRepository, fallback: localRepository)
+        let projectRepository: ProjectRepository = if config.isSupabaseConfigured {
+            SyncedProjectRepository(
+                remote: SupabaseProjectRepository(clientFactory: clientFactory),
+                cache: localRepository
+            )
+        } else {
+            localRepository
+        }
         let authService: AuthService = config.isSupabaseConfigured
             ? SupabaseAuthService(clientFactory: clientFactory)
-            : MockAuthService()
+            : UnavailableAuthService(message: "Supabase auth is not configured. Add SUPABASE_URL and SUPABASE_ANON_KEY to sign in.")
 
         let openRouterClient = OpenRouterClient(apiKey: config.openRouterAPIKey)
         let linkBuilder = AmazonAffiliateLinkBuilder(
@@ -31,7 +35,6 @@ struct AppContainer {
             associateTag: config.amazonAssociateTag.isEmpty ? "Reasonhome-20" : config.amazonAssociateTag
         )
 
-        let mockAnalysisService = MockAIAnalysisService()
         let openAIFallback: AIAnalysisService? = config.hasOpenAIKey
             ? OpenAIAnthropicAnalysisService(
                 analyzer: OpenAIAnalysisProvider(config: config),
@@ -43,12 +46,16 @@ struct AppContainer {
         if config.hasOpenRouterKey {
             analysisService = AIRouterService(
                 primary: OpenRouterAnalysisService(client: openRouterClient, qualityMode: qualityMode),
-                fallback: openAIFallback ?? mockAnalysisService
+                fallback: openAIFallback ?? UnavailableAIAnalysisService(
+                    message: "No live AI analysis provider is configured. Add OPENAI_API_KEY or keep OPENROUTER_API_KEY enabled."
+                )
             )
         } else if let openAIFallback {
             analysisService = openAIFallback
         } else {
-            analysisService = mockAnalysisService
+            analysisService = UnavailableAIAnalysisService(
+                message: "No live AI analysis provider is configured. Add OPENROUTER_API_KEY or OPENAI_API_KEY to analyze spaces."
+            )
         }
 
         let productRecommendationService: ProductRecommendationService = config.hasOpenRouterKey
@@ -57,14 +64,25 @@ struct AppContainer {
                 linkBuilder: linkBuilder,
                 qualityMode: qualityMode
             )
-            : CuratedAmazonRecommendationService(linkBuilder: linkBuilder)
-
-        let visualizationService: VisualizationService = config.hasOpenRouterKey
-            ? OpenRouterVisualizationService(
-                client: openRouterClient,
-                qualityMode: qualityMode
+            : UnavailableProductRecommendationService(
+                message: "OPENROUTER_API_KEY is required for live product recommendations."
             )
-            : MockVisualizationService()
+
+        let visualizationService: VisualizationService = config.hasOpenAIKey
+            ? OpenAIVisualizationService(config: config)
+            : UnavailableVisualizationService(
+                message: "OPENAI_API_KEY is required for live concept previews."
+            )
+
+        AppConsole.app.notice(
+            """
+            bootstrap complete | supabaseConfigured=\(config.isSupabaseConfigured, privacy: .public) \
+            | openRouterConfigured=\(config.hasOpenRouterKey, privacy: .public) \
+            | openAIConfigured=\(config.hasOpenAIKey, privacy: .public) \
+            | anthropicConfigured=\(config.hasAnthropicKey, privacy: .public) \
+            | qualityMode=\(String(describing: qualityMode), privacy: .public)
+            """
+        )
 
         return AppContainer(
             config: config,

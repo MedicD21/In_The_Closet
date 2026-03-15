@@ -7,7 +7,7 @@ struct MetricBarView: View {
     let score: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(title)
                     .font(BrandTypography.caption)
@@ -21,11 +21,11 @@ struct MetricBarView: View {
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(BrandColor.divider(for: colorScheme))
+                        .fill(BrandColor.secondarySurface(for: colorScheme))
                     Capsule()
                         .fill(
                             LinearGradient(
-                                colors: [BrandColor.teal, BrandColor.gold],
+                                colors: [BrandColor.teal, BrandColor.softTeal, BrandColor.gold],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -33,7 +33,7 @@ struct MetricBarView: View {
                         .frame(width: proxy.size.width * CGFloat(score) / 100)
                 }
             }
-            .frame(height: 10)
+            .frame(height: 12)
         }
     }
 }

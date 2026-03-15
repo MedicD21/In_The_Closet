@@ -92,6 +92,14 @@ struct StagingResultsView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Text(analysis.summaryText)
                                 .font(BrandTypography.body)
+                            if !analysis.confidenceNotes.isEmpty {
+                                Divider()
+                                ForEach(analysis.confidenceNotes, id: \.self) { note in
+                                    Text("• \(note)")
+                                        .font(BrandTypography.caption)
+                                        .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+                                }
+                            }
                             section(title: "Remove", items: advice.removeItems)
                             section(title: "Hide", items: advice.hideItems)
                             section(title: "Add", items: advice.addItems)
@@ -119,12 +127,14 @@ struct StagingResultsView: View {
                     }
                 }
 
-                NavigationLink {
-                    ShoppingRecommendationsView(analysis: analysis, selectedBudgetTier: $selectedBudgetTier)
-                } label: {
-                    PrimaryActionLabel(title: "Open Staging Shopping List", systemImage: "cart.fill")
+                if !analysis.budgetRecommendations.isEmpty {
+                    NavigationLink {
+                        ShoppingRecommendationsView(analysis: analysis, selectedBudgetTier: $selectedBudgetTier)
+                    } label: {
+                        PrimaryActionLabel(title: "Open Staging Shopping List", systemImage: "cart.fill")
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 NavigationLink {
                     VisualizationView(analysis: analysis, project: project, selectedBudgetTier: selectedBudgetTier)

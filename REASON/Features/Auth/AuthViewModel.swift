@@ -31,10 +31,10 @@ final class AuthViewModel: ObservableObject {
         return try await authService.continueWithGoogle()
     }
 
-    func continueAsGuest(using authService: AuthService) async -> UserProfile {
+    func continueAsGuest(using authService: AuthService) async throws -> UserProfile {
         isLoading = true
         defer { isLoading = false }
-        return await authService.continueAsGuest()
+        return try await authService.continueAsGuest()
     }
 
     func resetPassword(using authService: AuthService) async throws {

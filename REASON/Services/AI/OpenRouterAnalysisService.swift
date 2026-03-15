@@ -32,18 +32,19 @@ final class OpenRouterAnalysisService: AIAnalysisService {
         guard !client.apiKey.isEmpty else {
             throw AppError.configuration("OPENROUTER_API_KEY is not configured.")
         }
+        guard request.imageData != nil else {
+            throw AppError.validation("Choose a photo before running a live analysis.")
+        }
 
-        print("🤖 [OpenRouter] Starting analysis")
-        print("🤖 [OpenRouter] Stage 1 model: \(visionModel)")
+        AppConsole.analysis.notice("starting OpenRouter analysis stage1=\(self.visionModel, privacy: .public) stage2=\(self.plannerModel, privacy: .public) mode=\(request.mode.rawValue, privacy: .public) space=\(request.spaceType.rawValue, privacy: .public)")
 
         // Stage 1: Vision analysis
         let visionJSON = try await runStage1(request: request)
-        print("🤖 [OpenRouter] Stage 1 complete (\(visionJSON.count) chars)")
-        print("🤖 [OpenRouter] Stage 2 model: \(plannerModel)")
+        AppConsole.analysis.notice("OpenRouter stage 1 complete chars=\(visionJSON.count, privacy: .public)")
 
         // Stage 2: Organization planner → full SpaceAnalysis (coaching included)
         let result = try await runStage2(request: request, visionJSON: visionJSON)
-        print("🤖 [OpenRouter] Stage 2 complete — score: \(result.score.totalScore)")
+        AppConsole.analysis.notice("OpenRouter stage 2 complete score=\(result.score.totalScore, privacy: .public) opportunities=\(result.bestOpportunities.count, privacy: .public)")
         return result
     }
 
@@ -73,18 +74,11 @@ final class OpenRouterAnalysisService: AIAnalysisService {
 
         var content: [[String: Any]] = []
 
-        if let imageData = request.imageData {
-            let base64 = imageData.base64EncodedString()
-            content.append([
-                "type": "image_url",
-                "image_url": ["url": "data:image/jpeg;base64,\(base64)"]
-            ])
-        } else {
-            content.append([
-                "type": "text",
-                "text": "[No image — generate a plausible analysis for a typical \(request.spaceType.displayName.lowercased()).]"
-            ])
-        }
+        let base64 = request.imageData?.base64EncodedString() ?? ""
+        content.append([
+            "type": "image_url",
+            "image_url": ["url": "data:image/jpeg;base64,\(base64)"]
+        ])
         content.append(["type": "text", "text": systemPrompt])
 
         let payload: [String: Any] = [

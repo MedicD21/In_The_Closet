@@ -5,6 +5,7 @@ final class MockAuthService: AuthService {
 
     let supportsAppleSignIn = true
     let supportsGoogleSignIn = true
+    let supportsGuestAccess = true
 
     func restoreSession() async -> UserProfile? {
         guard let data = UserDefaults.standard.data(forKey: storageKey) else {
@@ -50,7 +51,7 @@ final class MockAuthService: AuthService {
         return user
     }
 
-    func continueAsGuest() async -> UserProfile {
+    func continueAsGuest() async throws -> UserProfile {
         let user = makeUser(name: "Guest", email: "guest@reason.app", authMethod: .guest)
         persist(user)
         return user

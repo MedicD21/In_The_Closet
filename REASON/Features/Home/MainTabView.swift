@@ -1,20 +1,22 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         TabView {
             NavigationStack {
                 HomeView()
             }
             .tabItem {
-                Label("Home", systemImage: "house")
+                Label("Home", systemImage: "house.fill")
             }
 
             NavigationStack {
                 ProjectsView()
             }
             .tabItem {
-                Label("Projects", systemImage: "square.stack.3d.up")
+                Label("Projects", systemImage: "square.stack.3d.up.fill")
             }
 
             NavigationStack {
@@ -28,9 +30,12 @@ struct MainTabView: View {
                 SettingsView()
             }
             .tabItem {
-                Label("Settings", systemImage: "gearshape")
+                Label("Settings", systemImage: "gearshape.fill")
             }
         }
         .tint(BrandColor.teal)
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbarBackground(BrandColor.tabBarBackground(for: colorScheme), for: .tabBar)
+        .toolbarColorScheme(colorScheme == .dark ? .dark : .light, for: .tabBar)
     }
 }
