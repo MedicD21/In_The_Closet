@@ -16,7 +16,7 @@ struct AppShellView: View {
             case .auth:
                 AuthView()
             case .main:
-                MainTabView()
+                RMSShellView(container: appModel.container, appModel: appModel)
             }
         }
         .preferredColorScheme(themeStore.preferredColorScheme)
