@@ -268,4 +268,4 @@ training_data/
 *.bak
 *.backup
 *.old
-*.orig
+*.orig.worktrees/
