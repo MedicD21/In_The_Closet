@@ -6,7 +6,7 @@ struct AppShellView: View {
 
     var body: some View {
         ZStack {
-            BrandBackground()
+            BrandColor.background.ignoresSafeArea()
 
             switch appModel.rootDestination {
             case .splash:

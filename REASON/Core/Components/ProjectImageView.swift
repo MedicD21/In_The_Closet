@@ -25,13 +25,13 @@ struct ProjectImageView: View {
             } else {
                 ZStack {
                     LinearGradient(
-                        colors: [BrandColor.softTeal.opacity(0.35), BrandColor.gold.opacity(0.22)],
+                        colors: [BrandColor.tealMuted.opacity(0.35), BrandColor.gold.opacity(0.22)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                     Image(systemName: "photo.on.rectangle.angled")
                         .font(.system(size: 38, weight: .medium))
-                        .foregroundStyle(BrandColor.primaryText(for: .light).opacity(0.5))
+                        .foregroundStyle(BrandColor.textPrimary.opacity(0.5))
                 }
             }
         }

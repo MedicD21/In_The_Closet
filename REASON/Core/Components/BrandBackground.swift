@@ -19,7 +19,7 @@ struct BrandBackground: View {
                 .offset(x: -150, y: -290)
 
             Circle()
-                .fill(BrandColor.softTeal.opacity(colorScheme == .dark ? 0.2 : 0.24))
+                .fill(BrandColor.tealMuted.opacity(colorScheme == .dark ? 0.2 : 0.24))
                 .frame(width: 360, height: 360)
                 .blur(radius: 120)
                 .offset(x: 170, y: -220)
@@ -48,14 +48,6 @@ struct BrandBackground: View {
     }
 
     private var gradientColors: [Color] {
-        if colorScheme == .dark {
-            return [
-                BrandColor.background(for: colorScheme),
-                BrandColor.deepBackground,
-                BrandColor.darkAccent
-            ]
-        }
-
-        return [BrandColor.warmWhite, Color.white, BrandColor.mist]
+        return [BrandColor.background, BrandColor.surface, BrandColor.surfaceElevated]
     }
 }
