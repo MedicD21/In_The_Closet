@@ -6,8 +6,6 @@ struct HomeView: View {
     let onNavigateToProjects: () -> Void
     let onNavigateToSettings: () -> Void
 
-    @State private var ringProgress: CGFloat = 0
-
     private var bestProject: SpaceProject? {
         appModel.projects.max(by: { ($0.currentScore ?? 0) < ($1.currentScore ?? 0) })
     }
@@ -190,9 +188,10 @@ struct HomeView: View {
                         .font(BrandTypography.bodyStrong)
                         .foregroundColor(BrandColor.textPrimary)
                         .lineLimit(1)
-                    // ScoreChip requires both score AND title params
                     if let score = project.currentScore {
-                        ScoreChip(score: score, title: project.title)
+                        Text("\(score)")
+                            .font(BrandTypography.scoreSmall)
+                            .foregroundColor(scoreColor(for: score))
                     }
                 }
                 .padding(12)
@@ -201,6 +200,14 @@ struct HomeView: View {
                 RoundedRectangle(cornerRadius: 20)
                     .stroke(BrandColor.stroke, lineWidth: 0.5)
             )
+    }
+
+    private func scoreColor(for score: Int) -> Color {
+        switch score {
+        case ..<40: BrandColor.coral
+        case ..<70: BrandColor.gold
+        default: BrandColor.teal
+        }
     }
 
     private var spaceTypeStrip: some View {
