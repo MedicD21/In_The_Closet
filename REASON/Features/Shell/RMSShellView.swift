@@ -41,9 +41,11 @@ struct RMSShellView: View {
             .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 4)), removal: .opacity))
             .animation(.easeInOut(duration: 0.22), value: selectedTab)
         case .projects:
-            ProjectsView(appModel: appModel, container: container)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 4)), removal: .opacity))
-                .animation(.easeInOut(duration: 0.22), value: selectedTab)
+            NavigationStack {
+                ProjectsView(appModel: appModel, onStartUpload: { draft in uploadDraft = draft; isShowingUpload = true })
+            }
+            .transition(.asymmetric(insertion: .opacity.combined(with: .offset(y: 4)), removal: .opacity))
+            .animation(.easeInOut(duration: 0.22), value: selectedTab)
         case .staging:
             StagingHubView(
                 appModel: appModel,

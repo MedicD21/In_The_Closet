@@ -38,7 +38,7 @@ struct StagingHubView: View {
                     SectionHeader(title: "Saved staging projects", subtitle: nil)
                     ForEach(appModel.projects.filter { $0.mode == .stageForSelling }) { project in
                         NavigationLink {
-                            ProjectDetailView(project: project)
+                            ProjectDetailView(project: project, appModel: appModel, onStartUpload: { _ in })
                         } label: {
                             BrandCard {
                                 HStack {

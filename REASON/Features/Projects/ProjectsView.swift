@@ -1,139 +1,162 @@
 import SwiftUI
 
 struct ProjectsView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var appModel: AppModel
+    @ObservedObject var appModel: AppModel
+    let onStartUpload: (UploadDraft) -> Void
+
+    @State private var searchText = ""
+    @State private var selectedProject: SpaceProject?
+
+    private var filtered: [SpaceProject] {
+        if searchText.isEmpty { return appModel.projects }
+        return appModel.projects.filter {
+            $0.title.localizedCaseInsensitiveContains(searchText) ||
+            $0.spaceType.displayName.localizedCaseInsensitiveContains(searchText)
+        }
+    }
 
     var body: some View {
-        Group {
+        ZStack(alignment: .top) {
+            BrandColor.background.ignoresSafeArea()
             if appModel.projects.isEmpty {
-                VStack(spacing: 18) {
-                    Text("No saved projects yet")
-                        .font(BrandTypography.screenTitle)
-                    Text("Once you save a space, you’ll be able to revisit the score, shopping tools, and compare future progress here.")
-                        .font(BrandTypography.body)
-                        .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                        .multilineTextAlignment(.center)
-                }
-                .padding(24)
+                emptyState
             } else {
-                List {
-                    ForEach(appModel.projects) { project in
-                        NavigationLink {
-                            ProjectDetailView(project: project)
-                        } label: {
-                            HStack(spacing: 14) {
-                                ProjectImageView(projectImage: project.images.first)
-                                    .frame(width: 74, height: 74)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(project.title)
-                                        .font(BrandTypography.bodyStrong)
-                                    Text(project.mode.longLabel)
-                                        .font(BrandTypography.caption)
-                                        .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                                    if let score = project.currentScore {
-                                        Text("Score \(score)")
-                                            .font(BrandTypography.caption)
-                                            .foregroundStyle(BrandColor.teal)
-                                    }
-                                }
-                            }
-                            .padding(.vertical, 6)
-                        }
-                    }
-                    .onDelete { indexSet in
-                        Task {
-                            for index in indexSet {
-                                let project = appModel.projects[index]
-                                await appModel.delete(projectID: project.id)
-                            }
-                        }
-                    }
-                }
-                .scrollContentBackground(.hidden)
+                projectList
             }
         }
-        .navigationTitle("Saved Projects")
-    }
-}
-
-struct ProjectDetailView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var appModel: AppModel
-    @State private var isShowingCompareFlow = false
-    @State private var selectedBudgetTier: BudgetTier = .budget
-
-    let project: SpaceProject
-
-    private var resolvedProject: SpaceProject {
-        appModel.projects.first(where: { $0.id == project.id }) ?? project
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                ProjectImageView(projectImage: resolvedProject.images.last)
-                    .frame(height: 240)
-
-                BrandCard {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text(resolvedProject.title)
-                            .font(BrandTypography.screenTitle)
-                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                        Text(resolvedProject.mode.longLabel)
-                            .font(BrandTypography.caption)
-                            .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                        if let analysis = resolvedProject.latestAnalysis {
-                            Text(analysis.summaryText)
-                                .font(BrandTypography.body)
-                                .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                            ScoreChip(score: analysis.score.totalScore, title: "Current Score")
-                        }
-                    }
-                }
-
-                if let analysis = resolvedProject.latestAnalysis {
-                    BrandCard {
-                        VStack(alignment: .leading, spacing: 14) {
-                            SectionHeader(title: "Latest plan", subtitle: nil)
-                            ForEach(analysis.resetPlan.prefix(3)) { step in
-                                Text("\(step.order). \(step.title)")
-                                    .font(BrandTypography.body)
-                            }
-                        }
-                    }
-
-                    NavigationLink {
-                        ShoppingRecommendationsView(analysis: analysis, selectedBudgetTier: $selectedBudgetTier)
-                    } label: {
-                        PrimaryActionLabel(title: "Open Shopping Tools", systemImage: "cart.fill")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink {
-                        VisualizationView(analysis: analysis, project: resolvedProject, selectedBudgetTier: selectedBudgetTier)
-                    } label: {
-                        SecondaryActionLabel(title: "See Concept Preview")
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                PrimaryActionButton("Compare Progress", systemImage: "arrow.left.arrow.right.circle") {
-                    isShowingCompareFlow = true
-                }
-            }
-            .padding(.bottom, 30)
+        .navigationDestination(item: $selectedProject) { project in
+            ProjectDetailView(project: project, appModel: appModel, onStartUpload: onStartUpload)
         }
-        .navigationTitle("Project Detail")
-        .sheet(isPresented: $isShowingCompareFlow) {
-            if let user = appModel.currentUser {
-                UploadFlowContainerView(
-                    container: appModel.container,
-                    currentUser: user,
-                    existingProject: resolvedProject,
-                    initialDraft: UploadDraft(spaceType: resolvedProject.spaceType, customSpaceName: resolvedProject.customSpaceName ?? "", mode: .compareProgress, selectedImageData: nil, imageAssetName: nil, existingProjectID: resolvedProject.id)
+    }
+
+    private var projectList: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                headerBar
+                    .padding(.horizontal, 20)
+                    .padding(.top, 60)
+                    .padding(.bottom, 16)
+
+                // Search bar
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(BrandColor.textTertiary)
+                    TextField("Search spaces…", text: $searchText)
+                        .font(BrandTypography.body)
+                        .foregroundColor(BrandColor.textPrimary)
+                }
+                .padding(12)
+                .background(BrandColor.surfaceElevated)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(BrandColor.stroke, lineWidth: 0.5)
                 )
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+
+                LazyVStack(spacing: 12) {
+                    ForEach(filtered) { project in
+                        projectCard(project)
+                            .onTapGesture { selectedProject = project }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 100)
             }
+        }
+    }
+
+    private var headerBar: some View {
+        HStack {
+            Text("My Spaces")
+                .font(BrandTypography.screenTitle)
+                .foregroundColor(BrandColor.textPrimary)
+            Spacer()
+            Button {
+                var draft = UploadDraft()
+                draft.mode = .organize
+                onStartUpload(draft)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(BrandColor.teal)
+                    .frame(width: 36, height: 36)
+                    .background(BrandColor.surfaceElevated)
+                    .clipShape(Circle())
+            }
+        }
+    }
+
+    private func projectCard(_ project: SpaceProject) -> some View {
+        RMSCard {
+            HStack(spacing: 16) {
+                // Score badge
+                ZStack {
+                    Circle()
+                        .fill(BrandColor.goldMuted)
+                        .frame(width: 52, height: 52)
+                    if let score = project.currentScore {
+                        Text("\(score)")
+                            .font(BrandTypography.scoreSmall)
+                            .foregroundColor(BrandColor.gold)
+                    } else {
+                        Image(systemName: project.spaceType.iconName)
+                            .font(.system(size: 20))
+                            .foregroundColor(BrandColor.gold)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(project.title)
+                        .font(BrandTypography.bodyStrong)
+                        .foregroundColor(BrandColor.textPrimary)
+                        .lineLimit(1)
+                    HStack(spacing: 6) {
+                        TagChip(title: project.spaceType.displayName, accent: BrandColor.textSecondary)
+                        TagChip(title: project.mode.displayName, accent: BrandColor.teal)
+                    }
+                    Text(project.updatedAt.formatted(.relative(presentation: .named)))
+                        .font(BrandTypography.micro)
+                        .foregroundColor(BrandColor.textTertiary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(BrandColor.textTertiary)
+            }
+            .padding(16)
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 0) {
+            headerBar
+                .padding(.horizontal, 20)
+                .padding(.top, 60)
+                .padding(.bottom, 40)
+
+            Spacer()
+            VStack(spacing: 20) {
+                Image(systemName: "tray")
+                    .font(.system(size: 48))
+                    .foregroundColor(BrandColor.textTertiary)
+                Text("No spaces yet")
+                    .font(BrandTypography.sectionTitle)
+                    .foregroundColor(BrandColor.textPrimary)
+                Text("Analyze your first space to get started.")
+                    .font(BrandTypography.body)
+                    .foregroundColor(BrandColor.textSecondary)
+                PrimaryButton("Analyze a Space") {
+                    var draft = UploadDraft()
+                    draft.mode = .organize
+                    onStartUpload(draft)
+                }
+                .padding(.horizontal, 40)
+            }
+            Spacer()
         }
     }
 }
