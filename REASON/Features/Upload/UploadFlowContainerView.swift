@@ -12,6 +12,7 @@ struct UploadFlowContainerView: View {
     @State private var rotation: Double = 0
     @State private var statusIndex = 0
     @State private var photosItem: PhotosPickerItem?
+    @State private var statusTimer: Timer?
 
     private let statusMessages = [
         "Reading surfaces…",
@@ -107,9 +108,13 @@ struct UploadFlowContainerView: View {
             }
             .onChange(of: photosItem) { _, newItem in
                 Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                        viewModel.draft.selectedImageData = data
-                        viewModel.continueFromSpaceSelection()
+                    do {
+                        if let data = try await newItem?.loadTransferable(type: Data.self) {
+                            viewModel.draft.selectedImageData = data
+                            viewModel.continueFromSpaceSelection()
+                        }
+                    } catch {
+                        viewModel.errorMessage = "Could not load the selected photo. Please try again."
                     }
                 }
             }
@@ -161,8 +166,12 @@ struct UploadFlowContainerView: View {
                     }
                     .onChange(of: photosItem) { _, newItem in
                         Task {
-                            if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                                viewModel.draft.selectedImageData = data
+                            do {
+                                if let data = try await newItem?.loadTransferable(type: Data.self) {
+                                    viewModel.draft.selectedImageData = data
+                                }
+                            } catch {
+                                viewModel.errorMessage = "Could not load the selected photo. Please try again."
                             }
                         }
                     }
@@ -230,6 +239,10 @@ struct UploadFlowContainerView: View {
                     }
                     startStatusCycling()
                 }
+                .onDisappear {
+                    statusTimer?.invalidate()
+                    statusTimer = nil
+                }
 
                 Text("Analyzing your space…")
                     .font(BrandTypography.sectionTitle)
@@ -286,6 +299,20 @@ struct UploadFlowContainerView: View {
                     }
                 }
             }
+        } else {
+            // Fallback: analysis data missing at results step — surface error and allow dismissal
+            VStack(spacing: 20) {
+                sheetHandle
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 40))
+                    .foregroundColor(BrandColor.coral)
+                Text("Something went wrong")
+                    .font(BrandTypography.sectionTitle)
+                    .foregroundColor(BrandColor.textPrimary)
+                GhostButton(title: "Dismiss") { onDismiss() }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
         }
     }
 
@@ -298,14 +325,14 @@ struct UploadFlowContainerView: View {
                 .font(BrandTypography.sectionTitle)
                 .foregroundColor(BrandColor.textPrimary)
 
-            if let delta = viewModel.comparison?.scoreDelta {
+            if let delta = viewModel.comparison?.scoreDelta,
+               let afterScore = viewModel.analysis?.score.totalScore {
+                let beforeScore = afterScore - delta
                 Text(delta >= 0 ? "+\(delta) pts" : "\(delta) pts")
                     .font(BrandTypography.scoreSmall)
                     .foregroundColor(delta >= 0 ? BrandColor.teal : BrandColor.coral)
 
                 HStack(spacing: 16) {
-                    let afterScore = viewModel.analysis?.score.totalScore ?? 0
-                    let beforeScore = afterScore - delta
                     TagChip(title: "Before: \(beforeScore)", accent: BrandColor.textSecondary)
                     Image(systemName: "arrow.right")
                         .foregroundColor(BrandColor.textTertiary)
@@ -368,9 +395,13 @@ struct UploadFlowContainerView: View {
     }
 
     private func startStatusCycling() {
-        Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { timer in
+        statusTimer?.invalidate()
+        statusTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { timer in
             withAnimation { statusIndex = (statusIndex + 1) % statusMessages.count }
-            if viewModel.step != .analyzing { timer.invalidate() }
+            if viewModel.step != .analyzing {
+                timer.invalidate()
+                statusTimer = nil
+            }
         }
     }
 }
