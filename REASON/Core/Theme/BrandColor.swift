@@ -1,72 +1,47 @@
 import SwiftUI
 
 enum BrandColor {
-    // Inspired by the RMS brand board: deep blue-green, warm sand, and bright orange.
-    static let deepBackground = Color(hex: "#0A2D36")
-    static let darkAccent = Color(hex: "#133B46")
-    static let teal = Color(hex: "#377F8F")
-    static let softTeal = Color(hex: "#9EBEC3")
-    static let mist = Color(hex: "#EAE9E3")
-    static let warmWhite = Color(hex: "#F7F3EC")
-    static let cardLight = Color(hex: "#FEFCF8")
-    static let cardDark = Color(hex: "#15323B")
-    static let gold = Color(hex: "#DEC187")
-    static let coral = Color(hex: "#E36A3E")
-    static let plum = Color(hex: "#7C3157")
-    static let textPrimaryLight = Color(hex: "#183844")
-    static let textPrimaryDark = Color(hex: "#F3ECDF")
-    static let textSecondaryLight = Color(hex: "#6D7C82")
-    static let textSecondaryDark = Color(hex: "#C9C8C1")
+    // MARK: — Backgrounds
+    static let background       = Color(hex: "#09141A")
+    static let surface          = Color(hex: "#0F2029")
+    static let surfaceElevated  = Color(hex: "#162C38")
 
-    static func background(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(hex: "#09262E") : warmWhite
-    }
+    // MARK: — Accents
+    static let teal             = Color(hex: "#3D8C9E")
+    static let tealMuted        = Color(hex: "#1E4F5C")
+    static let gold             = Color(hex: "#DEC187")
+    static let goldMuted        = Color(hex: "#3B3020")
+    static let coral            = Color(hex: "#E36A3E")
 
-    static func elevatedBackground(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.06) : Color.white.opacity(0.82)
-    }
+    // MARK: — Text
+    static let textPrimary      = Color(hex: "#F0E8DB")
+    static let textSecondary    = Color(hex: "#8A9BA3")
+    static let textTertiary     = Color(hex: "#4A6470")
 
-    static func surface(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? cardDark : cardLight
-    }
+    // MARK: — UI
+    static let stroke            = Color.white.opacity(0.07)
+    static let divider           = Color.white.opacity(0.05)
+    static let overlay           = Color(hex: "#09141A").opacity(0.72)
+}
 
-    static func secondarySurface(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(hex: "#102A33") : Color(hex: "#F6F2EB")
-    }
-
-    static func surfaceHighlight(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(hex: "#1A404C") : Color(hex: "#F2EEE7")
-    }
-
-    static func primaryText(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? textPrimaryDark : textPrimaryLight
-    }
-
-    static func secondaryText(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? textSecondaryDark : textSecondaryLight
-    }
-
-    static func divider(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.07)
-    }
-
-    static func cardStroke(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.05)
-    }
-
-    static func shadowColor(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color.black.opacity(0.34) : Color(hex: "#355160").opacity(0.12)
-    }
-
-    static func primaryGradient(for scheme: ColorScheme) -> [Color] {
-        if scheme == .dark {
-            return [Color(hex: "#4690A1"), teal, Color(hex: "#1E5C6A")]
+// MARK: — Hex initializer
+private extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let r, g, b: UInt64
+        switch hex.count {
+        case 6:
+            (r, g, b) = ((int >> 16) & 0xFF, (int >> 8) & 0xFF, int & 0xFF)
+        default:
+            (r, g, b) = (0, 0, 0)
         }
-
-        return [Color(hex: "#4A93A4"), teal, Color(hex: "#285E6D")]
-    }
-
-    static func tabBarBackground(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(hex: "#0E2830").opacity(0.94) : Color.white.opacity(0.94)
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255
+        )
     }
 }
