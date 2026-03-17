@@ -21,7 +21,7 @@ enum BrandColor {
     // MARK: — UI
     static let stroke            = Color.white.opacity(0.07)
     static let divider           = Color.white.opacity(0.05)
-    static let overlay           = Color(hex: "#09141A").opacity(0.72)
+    static let overlay           = BrandColor.background.opacity(0.72)
 }
 
 // MARK: — Hex initializer
