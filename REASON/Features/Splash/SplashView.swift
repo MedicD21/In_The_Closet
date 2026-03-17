@@ -11,7 +11,7 @@ struct SplashView: View {
 private struct SplashArtworkView: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let container = UIView()
-        container.backgroundColor = UIColor(named: "SplashBackground")
+        container.backgroundColor = UIColor(red: 9/255, green: 20/255, blue: 26/255, alpha: 1)
 
         let imageView = UIImageView(image: UIImage(named: "RMS_Splash"))
         imageView.translatesAutoresizingMaskIntoConstraints = false
