@@ -6,7 +6,7 @@ struct ProjectDetailView: View {
     let onStartUpload: (UploadDraft) -> Void
     @Environment(\.dismiss) private var dismiss
 
-    private var latestAnalysis: SpaceAnalysis? { project.analyses.last }
+    private var latestAnalysis: SpaceAnalysis? { project.latestAnalysis }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -107,7 +107,7 @@ struct ProjectDetailView: View {
                     .foregroundColor(BrandColor.textPrimary)
                     .padding(20)
                 VStack(spacing: 14) {
-                    ForEach(Array(analysis.score.metrics.enumerated()), id: \.element.id) { i, metric in
+                    ForEach(Array(analysis.score.metrics.enumerated()), id: \.offset) { i, metric in
                         MetricBar(label: metric.category.displayName, value: metric.score, index: i)
                     }
                 }
