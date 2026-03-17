@@ -129,10 +129,10 @@ struct ResultsView: View {
 
                 if metricsExpanded {
                     VStack(spacing: 14) {
-                        ForEach(analysis.score.metrics.indices, id: \.self) { i in
+                        ForEach(Array(analysis.score.metrics.enumerated()), id: \.element.id) { i, metric in
                             MetricBar(
-                                label: analysis.score.metrics[i].category.displayName,
-                                value: analysis.score.metrics[i].score,
+                                label: metric.category.displayName,
+                                value: metric.score,
                                 index: i
                             )
                         }
@@ -272,7 +272,9 @@ struct ResultsView: View {
                                     .foregroundColor(BrandColor.textSecondary)
                             }
                             Spacer()
-                            Link(destination: item.amazonURL) {
+                            Button {
+                                UIApplication.shared.open(item.amazonURL)
+                            } label: {
                                 Text("Shop")
                                     .font(BrandTypography.label)
                                     .foregroundColor(BrandColor.textPrimary)

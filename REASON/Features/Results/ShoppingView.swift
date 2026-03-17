@@ -86,7 +86,9 @@ struct ShoppingView: View {
                                                     .foregroundColor(BrandColor.teal)
                                             }
                                             Spacer()
-                                            Link(destination: item.amazonURL) {
+                                            Button {
+                                                UIApplication.shared.open(item.amazonURL)
+                                            } label: {
                                                 Text("Open")
                                                     .font(BrandTypography.label)
                                                     .foregroundColor(BrandColor.textPrimary)
@@ -107,7 +109,7 @@ struct ShoppingView: View {
                 }
             }
         }
-        .navigationBarHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
     }
 
     private var headerBar: some View {
