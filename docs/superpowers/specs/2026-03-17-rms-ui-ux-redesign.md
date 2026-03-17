@@ -6,352 +6,530 @@
 
 ## 1. Design System
 
-### Color Tokens (BrandColor updates)
-| Token | Light (unused — dark-first) | Dark Value | Use |
-|---|---|---|---|
-| `background` | — | `#09141A` | App base |
-| `surface` | — | `#0F2029` | Cards, sheets |
-| `surfaceElevated` | — | `#162C38` | Floating elements, selected states |
-| `teal` | — | `#3D8C9E` | Primary accent, CTAs |
-| `tealMuted` | — | `#1E4F5C` | Teal tinted backgrounds |
-| `gold` | — | `#DEC187` | Score rings, highlights |
-| `goldMuted` | — | `#3B3020` | Gold tinted backgrounds |
-| `coral` | — | `#E36A3E` | Alerts, staging mode |
-| `textPrimary` | — | `#F0E8DB` | Warm white body text |
-| `textSecondary` | — | `#8A9BA3` | Subdued labels |
-| `textTertiary` | — | `#4A6470` | Hints, placeholders |
-| `stroke` | — | `rgba(255,255,255,0.07)` | Card borders |
+### Color Tokens — BrandColor migration
 
-The app is dark-first. Light mode support is preserved via the existing `ColorScheme` pattern but the dark palette is the primary design target.
+The existing `BrandColor` uses function-based accessors (`BrandColor.surface(for: colorScheme)`). The new tokens are dark-first static values. To avoid compiler conflicts, the migration strategy is:
 
-### Typography Scale (BrandTypography updates)
-| Token | Font Design | Size | Weight |
-|---|---|---|---|
-| `displayTitle` | Serif | 44pt | Semibold |
-| `screenTitle` | Rounded | 28pt | Bold |
-| `sectionTitle` | Rounded | 20pt | Semibold |
-| `body` | Rounded | 16pt | Regular |
-| `bodyStrong` | Rounded | 16pt | Semibold |
-| `label` | Rounded | 13pt | Semibold |
-| `micro` | Rounded | 11pt | Semibold |
-| `score` | Rounded | 52pt | Heavy |
-| `scoreSmall` | Rounded | 32pt | Heavy |
+- **Rename** all existing function-based accessors by appending `Adaptive` (e.g., `surface(for:)` → `surfaceAdaptive(for:)`). These are used only in any views intentionally left with the old API — there are none, because all views are being rebuilt.
+- **Add** new static dark-first tokens directly to `BrandColor`.
+- Since all views are being rebuilt from scratch, there is no backward-compatibility burden. The old function-based API is fully replaced.
+
+| Token | Dark Value | Use |
+|---|---|---|
+| `background` | `#09141A` | App base |
+| `surface` | `#0F2029` | Cards, sheets |
+| `surfaceElevated` | `#162C38` | Floating elements, selected states |
+| `teal` | `#3D8C9E` | Primary accent, CTAs |
+| `tealMuted` | `#1E4F5C` | Teal tinted backgrounds |
+| `gold` | `#DEC187` | Score rings, highlights |
+| `goldMuted` | `#3B3020` | Gold tinted backgrounds |
+| `coral` | `#E36A3E` | Alerts, staging mode |
+| `textPrimary` | `#F0E8DB` | Warm white body text |
+| `textSecondary` | `#8A9BA3` | Subdued labels |
+| `textTertiary` | `#4A6470` | Hints, placeholders |
+| `stroke` | `rgba(255,255,255,0.07)` | Card borders |
+| `divider` | `rgba(255,255,255,0.05)` | Section dividers |
+| `overlay` | `rgba(9,20,26,0.72)` | Sheet scrim |
+
+Light mode: the existing warm-white/teal palette is preserved by checking `colorScheme` at call site where needed. The app is dark-first; light mode uses `warmWhite` background and `textPrimaryLight` text. All new components accept `@Environment(\.colorScheme)` and fall back gracefully.
+
+### Typography Scale — BrandTypography migration
+
+All old tokens are **replaced**. Since all views are rebuilt, no alias compatibility is needed.
+
+| New Token | Old Token | Font Design | Size | Weight | Notes |
+|---|---|---|---|---|---|
+| `displayTitle` | `brandTitle` | Serif | 44pt | Semibold | Up from 40pt |
+| `screenTitle` | `screenTitle` | Rounded | 28pt | Bold | Down from 30pt |
+| `sectionTitle` | `sectionTitle` | Rounded | 20pt | Semibold | Unchanged |
+| `body` | `body` | Rounded | 16pt | Regular | Unchanged |
+| `bodyStrong` | `bodyStrong` | Rounded | 16pt | Semibold | Unchanged |
+| `label` | — | Rounded | 13pt | Semibold | New — replaces caption at 12pt |
+| `micro` | `caption` | Rounded | 11pt | Semibold | Down from 12pt |
+| `button` | `button` | Rounded | 16pt | Semibold | Unchanged |
+| `score` | `score` | Rounded | 52pt | Heavy | Up from 48pt |
+| `scoreSmall` | — | Rounded | 32pt | Heavy | New |
 
 ### Component Primitives
-- **RMSCard**: `cornerRadius 24`, `stroke 0.5pt`, inner shadow, `surface` background
-- **PrimaryButton**: full-width teal pill, `cornerRadius 16`, `height 54`
-- **SecondaryButton**: ghost pill with teal stroke
-- **GhostButton**: text-only, teal color
-- **FAB**: 60×60 circle, gold-to-teal diagonal gradient, `shadowRadius 20` teal glow
-- **ScoreRing**: SwiftUI Canvas arc, gold gradient stroke, dark track, score number centered
-- **TagChip**: `cornerRadius 8`, `height 26`, `micro` font, filled or outlined variants
-- **SheetHandle**: 36×4 rounded rect, `textTertiary` fill, centered at sheet top
-- **NavPill**: `cornerRadius 32`, `height 64`, `ultraThinMaterial` + `surface` 85% overlay, `stroke` border
+- **RMSCard**: `cornerRadius 24`, `stroke 0.5pt`, subtle drop shadow (`shadowColor 0.15 opacity, radius 16, y 4`), `surface` background. Replaces `BrandCard`.
+- **PrimaryButton**: full-width teal pill, `cornerRadius 16`, `height 54`, `textPrimary` label. Replaces `PrimaryActionButton`.
+- **SecondaryButton**: ghost pill with `teal` stroke 1pt, `teal` label text. Replaces `SecondaryActionButton`.
+- **GhostButton**: text-only, `teal` color, no background.
+- **DestructiveButton**: text-only, `coral` color.
+- **FAB**: 60×60 circle, gold-to-teal diagonal `LinearGradient`, `shadow(color: teal.opacity(0.4), radius: 20, y: 8)`.
+- **ScoreRing**: SwiftUI `Canvas` arc using `angularGradient` (not `linearGradient`) to produce a smooth color sweep along the arc path. Dark track arc drawn first, then gold angular gradient arc on top. Score number centered using `Text` overlay.
+- **TagChip**: `cornerRadius 8`, `height 26`, `micro` font. Init: `TagChip(title: String, accent: Color, variant: TagChipVariant = .outlined)`. `.filled` variant: `accent.opacity(0.18)` bg + `accent` text. `.outlined` variant: `accent` stroke 1pt + `accent` text.
+- **SheetHandle**: 36×4 rounded rect, `textTertiary` fill, centered at sheet top, 8pt top padding.
+- **NavPill**: `cornerRadius 32`, `height 64`, `ultraThinMaterial` background + `surface` overlay 85% + `stroke` border 0.5pt.
+- **MetricBar**: `RoundedRectangle(cornerRadius: 4)` on a `surface` track. Fill color: `coral` (<40), `gold` (40–69), `teal` (70+). Animated with `.spring(response: 0.7)` on appear. `isExpanded` is view-local `@State` in `ResultsView`.
 
 ### Animation Constants
 - **Sheet spring**: `.spring(response: 0.45, dampingFraction: 0.82)`
-- **Card stagger**: `.spring(response: 0.5)`, 0.06s delay per card
-- **Score ring draw**: `.easeOut(duration: 1.1)` from 0 to value
-- **Metric bars**: `.spring(response: 0.7)`, 0.05s stagger
-- **Tab transition**: `.easeInOut(duration: 0.22)`, 4pt Y offset
-- **FAB pulse**: scale 1.0→1.06→1.0, 2s, `repeatForever`, `autoreverse`, only when projects count == 0
-- **Analyzing ring**: continuous rotation, 0.8 rps, gradient arc
-- **Budget card press**: scale 0.97 on press, spring release
+- **Card stagger**: `.spring(response: 0.5)`, 0.06s delay per card index
+- **Score ring draw**: `.easeOut(duration: 1.1)` animating a `@State var ringProgress: CGFloat` from 0 to `score/100`
+- **Metric bars**: `.spring(response: 0.7)`, 0.05s stagger per bar index
+- **Tab transition**: `.easeInOut(duration: 0.22)`, 4pt Y offset, opacity 0→1
+- **FAB pulse**: `@State var isPulsing` scale 1.0→1.06→1.0, 2s, `repeatForever`, `autoreverse`, active only when `appModel.projects.isEmpty`
+- **Analyzing ring**: `@State var rotation: Double = 0`. `.onAppear { withAnimation(.linear(duration: 1.25).repeatForever(autoreverses: false)) { rotation = 360 } }`. Arc drawn with `angularGradient` teal→gold.
+- **Budget card press**: `.scaleEffect(isPressed ? 0.97 : 1.0)` via `ButtonStyle`
 
 ---
 
 ## 2. Navigation Shell
 
-### MainTabView → RMSShellView
-Replace `TabView` with a custom `ZStack` layout:
-- Content area fills the full screen (including safe areas for immersive photo headers)
-- `RMSNavPill` overlaid at bottom, inset 24pt from home indicator
+### RMSShellView — replaces MainTabView + AppShellView integration
+
+`AppShellView.swift` is modified to use `RMSShellView` in the `.main` case. `MainTabView.swift` is deleted.
+
+`RMSShellView` is a `ZStack`:
+```
+ZStack(alignment: .bottom) {
+    content(for: selectedTab)   // full-screen, ignores safe areas for immersive headers
+    RMSNavPill(selectedTab: $selectedTab, onFABTap: { isShowingUpload = true })
+        .padding(.bottom, 24)
+}
+.sheet(isPresented: $isShowingUpload) {
+    UploadFlowContainerView(container: ..., currentUser: ..., initialDraft: uploadDraft)
+}
+```
+
+**FAB state ownership:** `isShowingUpload: Bool` and `uploadDraft: UploadDraft` live in `RMSShellView`, not in `HomeView`. `HomeView` receives a callback `onStartUpload: (UploadDraft) -> Void` to trigger the shell-level sheet. The quick-action buttons and space-type strip in `HomeView` call this callback with a pre-configured `UploadDraft`.
 
 ### RMSNavPill
-Five slots: Home · Projects · FAB · Staging · Settings
+Five slots: Home · Projects · [FAB] · Staging · Settings
 
 ```
-[house] [square.stack.3d.up] [FAB↑] [sparkles] [gearshape]
+[house.fill] [square.stack.3d.up.fill] [FAB↑] [sparkles.fill] [gearshape.fill]
 ```
 
-- FAB floats 16pt above the pill's vertical center (breaks the pill top edge)
-- FAB: 60×60, gold→teal gradient, `shadow(color: teal.opacity(0.4), radius: 20)`
-- Active icons: filled variant, `teal` color
-- Inactive icons: outlined variant, `textTertiary`
-- Pill: `ultraThinMaterial` background + `surface` overlay 85% + `stroke` 0.5pt border
-- Tab switch: opacity + 4pt Y offset transition, 0.22s easeInOut
-- FAB tap: opens upload sheet (same as before)
-
-### AppShellView
-`AppShellView` is updated to use `RMSShellView` in place of `MainTabView`.
+- FAB floats 16pt above the pill's vertical center, breaking the top edge visually
+- FAB: 60×60 circle, `LinearGradient(colors: [gold, teal], startPoint: .topLeading, endPoint: .bottomTrailing)`
+- `shadow(color: teal.opacity(0.4), radius: 20, y: 8)` on FAB
+- Active tab icons: filled SF Symbol variant, `teal` tint
+- Inactive: outlined variant, `textTertiary`
+- Pill: `ultraThinMaterial` + `surface` 85% overlay + `stroke` 0.5pt border
+- Tab content transition: opacity + 4pt Y offset, `.easeInOut(duration: 0.22)`
 
 ---
 
-## 3. Onboarding
+## 3. Splash Screen
+
+### SplashView — in scope, light update only
+`SplashView` is **in scope** but receives only a cosmetic update — background color changed to `background` (`#09141A`) from the current `SplashBackground`. The `RMS_Splash` asset display logic is unchanged. No structural rebuild required. File: `Features/Splash/SplashView.swift` (modified, not rebuilt).
+
+---
+
+## 4. Onboarding
 
 ### OnboardingView — Full rebuild
-3 full-screen pages, no card containers. Each page is an independent view.
+3 full-screen pages. No card wrappers.
 
-**Page layout (each page):**
-- Full bleed dark background (page-specific tint: teal / gold / coral)
-- Top 40%: large SF Symbol in a radial glow circle (symbol at 64pt, circle 120×120)
-- Middle 30%: `displayTitle` serif headline (2 lines max)
-- Lower 20%: `body` subtext in `textSecondary`
-- Page 3 only: blurred home screen preview behind a frosted `ultraThinMaterial` overlay
+**Each page structure:**
+- Full-bleed `background` color + page-specific top radial glow (page 1: `tealMuted`, page 2: `goldMuted`, page 3: `coral` at 15% opacity)
+- Top 38%: SF Symbol at 64pt in a radial glow circle (120×120, symbol accent at 18% opacity fill)
+  - Page 1: `camera.viewfinder`, `teal`
+  - Page 2: `chart.bar.doc.horizontal`, `gold`
+  - Page 3: `sparkles.rectangle.stack`, `coral`
+- Middle: `displayTitle` serif headline (2 lines max)
+- Below headline: `body` subtext in `textSecondary`
+- Page 3 only: a 160×280 card preview of the home dashboard rendered as a static `Image("OnboardingHomePreview")` blurred behind a `ultraThinMaterial` frosted card shape, showing app personality
 
-**Bottom controls (fixed, not scrolling):**
-- Dot indicator row (custom: filled circle = current, small circle = other)
-- "Continue" / "Get Started" primary pill button
-- "Already have an account? Sign in" ghost button (page 3 only)
+**Fixed bottom controls (not in scroll):**
+- Page dot indicator: custom — filled `teal` circle (8pt) for current, `textTertiary` circle (6pt) for others, 8pt spacing
+- "Continue" → "Get Started" on page 3: `PrimaryButton`
+- "Already have an account? Sign in": `GhostButton`, page 3 only, calls `appModel.completeOnboarding()` then navigates to auth
 
-**Transitions:** `.easeInOut` horizontal slide between pages.
-
----
-
-## 4. Auth Screen
-
-### AuthView — Full rebuild
-No `BrandCard` wrapper. Content floats directly on `background`.
-
-**Layout:**
-1. RMS app icon (56×56, `cornerRadius 14`) + "Reset My Space" `displayTitle` serif — centered hero at top
-2. Custom segmented control: "Sign In" / "Sign Up" with sliding `teal` capsule indicator
-3. Text fields: `surfaceElevated` fill, `stroke` border, `cornerRadius 14`, `textPrimary` text, `textTertiary` placeholder
-4. Name field visible only in Sign Up mode, slides in with `.spring`
-5. Primary action button: "Sign In" or "Create Account"
-6. Divider: "or continue with"
-7. Apple sign-in button: full-width, `surfaceElevated` background, Apple logo + "Continue with Apple"
-8. Google sign-in button: same treatment with Google "G" logo using `Text("G")` styled bold coral
-
-**Staggered appear animation:** Fields and buttons animate in with `.spring(response: 0.5)` at 0.06s intervals.
+**Transitions:** `.easeInOut(duration: 0.3)` horizontal slide.
 
 ---
 
-## 5. Home Screen (Dashboard)
+## 5. Auth Screen
+
+### AuthView — Full rebuild (AuthViewModel unchanged)
+
+No card wrapper. Content floats on `background` with `tealMuted` radial glow top-right.
+
+**Layout (scrollable to handle keyboard):**
+1. RMS app icon `Image("AppIcon")` 56×56 `cornerRadius 14` + "Reset My Space" `displayTitle` serif centered
+2. Custom segmented control: "Sign In" / "Sign Up" — `surfaceElevated` track, `teal` sliding capsule indicator animated with `.spring(response: 0.4)`
+3. Text fields: `surfaceElevated` fill, `stroke` border 0.5pt, `cornerRadius 14`, `textPrimary` text, `textTertiary` placeholder label
+4. Name field: visible only in Sign Up mode, slides in via `.transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity))`
+5. Primary action button
+6. "Forgot Password": `GhostButton`, visible in Sign In mode only. Calls `viewModel.resetPassword(using:)`. Shows a success/error notice via `appModel.notice`.
+7. Divider with "or" label in `textTertiary`
+8. Apple button: full-width, `surfaceElevated` bg, `stroke` border, Apple logo SF Symbol + "Continue with Apple" — shown only if `authService.supportsAppleSignIn`
+9. Google button: same treatment, `Text("G")` in `bodyStrong` `coral` + "Continue with Google" — shown only if `authService.supportsGoogleSignIn`
+10. Guest button: `GhostButton` "Continue as Guest" — shown only if `authService.supportsGuestAccess`
+
+**Staggered appear:** Fields and buttons animate in with `.spring(response: 0.5)` at 0.06s intervals using `@State var appeared = false` + `.onAppear`.
+
+---
+
+## 6. Home Screen (Dashboard)
 
 ### HomeView — Full rebuild
 
-**Background:** `background` color + radial gradient glow (`tealMuted` at 30% opacity) from top-right corner.
+`HomeView` receives `onStartUpload: (UploadDraft) -> Void` from `RMSShellView` (no local sheet state).
 
-**Sections (scrollable, no nav bar — toolbar hidden):**
+**Background:** `background` + `RadialGradient(colors: [tealMuted.opacity(0.3), .clear], center: .topTrailing, startRadius: 0, endRadius: 380)`
 
-#### 5a. Header Bar
-```
-[RMS AppIcon 40×40 r:12]  "Reset My Space" sectionTitle serif   [Avatar circle]
-```
-- Avatar: initials in `teal` on `surfaceElevated` circle, 36×36. Taps to Settings.
-- RMS AppIcon loaded from `Assets.xcassets/AppIcon` via `Image("AppIcon")`
+**Sections (in a `ScrollView`, toolbar hidden, ignores top safe area for edge-to-edge):**
 
-#### 5b. Greeting
+#### 6a. Header Bar (sticky-ish — part of scroll but visually first)
 ```
-"Good morning, Dustin."  ← screenTitle, textPrimary
+[Image("AppIcon") 40×40 r:12]  "Reset My Space" sectionTitle serif   [Avatar 36×36]
+```
+Avatar: initials from `currentUser.displayName`, `teal` text on `surfaceElevated` circle. Tap → sets `selectedTab = .settings` in parent.
+
+#### 6b. Greeting
+```
+"Good morning, Dustin."      ← screenTitle, textPrimary
 "Your spaces are looking [adjective]."  ← body, textSecondary
 ```
-Adjective based on best score: <40 "like they need you", 40-60 "like a work in progress", 60-80 "pretty good", >80 "fantastic".
+Adjective from best project score: `<40` → "like they need you", `40–59` → "like a work in progress", `60–79` → "pretty good", `≥80` → "fantastic". If no projects: "ready for their first reset."
 
-#### 5c. Score Ring Hero
-- 200×200 SwiftUI Canvas arc ring
-- Gold gradient arc stroke (lineWidth 10), dark track
-- Center: best/most-recent score in `score` font, space name in `micro` `textSecondary`
-- If no projects: empty ring, "—" center, pulsing FAB hint label below
-- Ring draws on appear: `.easeOut(duration: 1.1)`
+#### 6c. Score Ring Hero (200×200)
+- `Canvas`-drawn arc, `angularGradient` gold sweep, dark track (`textTertiary` at 20% opacity)
+- Track lineWidth 10, score arc lineWidth 10
+- Center: `Text(score)` in `score` font `textPrimary`, space name in `micro` `textSecondary` below
+- Source: `appModel.projects.max(by: { ($0.currentScore ?? 0) < ($1.currentScore ?? 0) })`
+- If no projects: empty ring (track only), center "—" `score` font `textTertiary`, FAB hint "Tap ✦ to start" in `micro` below ring
+- `@State var ringProgress: CGFloat = 0`. Animate to `CGFloat(score) / 100` on appear.
 
-#### 5d. Quick Action Row
-Horizontal HStack of 3 pill buttons (not scrollable — they fit):
-- "New Reset" → teal filled
-- "Compare" → gold outline
-- "Stage" → coral outline
+#### 6d. Quick Action Row
+Three pill buttons in an `HStack`, equal width:
+- "New Reset": `PrimaryButton` (teal) → `onStartUpload(UploadDraft(mode: .organize))`
+- "Compare": `SecondaryButton` (gold outline, gold text) → `onStartUpload(UploadDraft(mode: .compareProgress))`
+- "Stage": `SecondaryButton` (coral outline, coral text) → `onStartUpload(UploadDraft(mode: .stageForSelling))`
 
-Each pre-selects the relevant `ProjectMode` in the upload sheet.
+#### 6e. Recent Projects Strip
+`ScrollView(.horizontal, showsIndicators: false)` of project cards:
+- Card: 200×140, `surface`, `cornerRadius 20`, `stroke`
+- Top 80pt: `ProjectImageView` full-bleed, bottom gradient overlay
+- Bottom: title `bodyStrong` `textPrimary`, score chip, date `micro` `textSecondary`
+- "See all →" `GhostButton` triggers `selectedTab = .projects` in parent
+- Empty state: single placeholder card, dashed `stroke`, "+" SF Symbol centered, `textTertiary`
 
-#### 5e. Recent Projects Strip
-Horizontal `ScrollView` of project cards:
-- Card: 200×140, `surface` background, `cornerRadius 20`
-- Top 80pt: space photo full-bleed with bottom gradient
-- Bottom: title `bodyStrong`, score chip, date `micro`
-- "See all" link navigates to Projects tab
-
-If empty: single placeholder card with dashed `stroke` border and "+" centered.
-
-#### 5f. Space Type Quick-Start
-"Reset a space" `label` header + horizontal scroll of space type pills:
-- Pill: space icon + name, `surfaceElevated`, `cornerRadius 12`
-- Tapping triggers upload sheet with space type pre-selected
+#### 6f. Space Type Quick-Start
+"Reset a space" `label` `textSecondary` header + `ScrollView(.horizontal)` of space type pills:
+- Pill: SF Symbol icon + space name, `surfaceElevated` bg, `cornerRadius 12`, `stroke`
+- Tap → `onStartUpload(UploadDraft(spaceType: type))`
 
 ---
 
-## 6. Upload Flow (Bottom Sheet Progressive Reveal)
+## 7. Upload Flow (Bottom Sheet Progressive Reveal)
 
-### UploadFlowContainerView — Full rebuild (ViewModel unchanged)
+### UploadFlowContainerView — Full rebuild (UploadFlowViewModel unchanged)
 
-The sheet is presented as a `.sheet` with programmatic detent control.
+**ViewModel step → UI stage mapping:**
 
-**Stage 1 — Photo selection (`.medium` detent)**
-- Sheet handle at top
-- Large camera icon (48pt, `teal`) centered
+| ViewModel Step | UI Stage | Sheet Detent |
+|---|---|---|
+| `.chooseSpace` | Stage 1 — photo + space selection | `.medium` |
+| `.customName` | Stage 1b — custom name inline expansion | `.medium` (expands content only) |
+| `.upload` (photo selected) | Stage 2 — configured, ready to analyze | `.large` |
+| `.analyzing` | Stage 3 — full-screen loading | `.fraction(1.0)` |
+| `.results` | Stage 4 — results in sheet | `.fraction(1.0)` |
+| `.confirmation` | Stage 5 — compare confirmation | `.medium` snap-back |
+
+The sheet uses `@State var sheetDetent: PresentationDetent` driven by `viewModel.step`. Step changes trigger `.onChange(of: viewModel.step)` which updates `sheetDetent` with a `withAnimation(sheetSpring)` call.
+
+**Stage 1 — `.medium` detent**
+- Sheet handle
+- Camera icon 48pt `teal` centered (if no photo selected)
 - "Choose a photo" `sectionTitle`
-- Photo picker primary button
-- "Take Photo" ghost button below
-- Space type horizontal pill scroll (pre-selected from quick-start if applicable)
+- `PhotosPicker` as primary button + "Take Photo" ghost button
+- Space type horizontal pill scroll below (default: first type or pre-selected from quick-start)
+- Note: `.medium` detent is ~50% screen height. Space type strip is a single horizontal scroll row — no vertical list — fitting comfortably.
 
-**Stage 2 — Photo selected (`.large` detent, spring expansion)**
-- Selected photo fills top 220pt, `cornerRadius 20`, gold `stroke` border 1pt
+**Stage 1b — Custom name inline (`.customName` step)**
+A `TextField` slides in below the space type strip with `.transition(.move(edge: .bottom).combined(with: .opacity))`. Sheet detent remains `.medium`. The "Continue" button calls `viewModel.continueFromCustomName()`.
+
+**Stage 2 — `.large` detent (photo selected)**
+Sheet springs to `.large`. Layout:
+- Selected photo: 220pt tall, `cornerRadius 20`, gold `stroke` 1pt, fill top of sheet below handle
 - Space type selector: horizontal pill scroll, selected = teal filled
-- Mode selector: 3 custom pills (Organize · Stage · Compare), sliding capsule selection
-- Custom name `TextField` slides in (`.spring`) when "Custom" space selected
-- "Analyze My Space" primary button at bottom, disabled until photo + space type chosen
+- Mode selector: 3 custom pills (Organize · Stage · Compare) with sliding `teal` capsule — driven by `$viewModel.draft.mode`
+- "Analyze My Space" `PrimaryButton` at bottom, disabled when `viewModel.draft.selectedImageData == nil`
 
-**Stage 3 — Analyzing (full-screen, `.fraction(1.0)` detent)**
-- Photo blurs (`.blur(radius: 12)`) as background
-- Centered: rotating gradient arc ring (teal→gold, `lineWidth 6`, 80×80)
-- "Analyzing your space…" `sectionTitle`
-- Status messages in `body` `textSecondary`, cycling every 2.5s with `.easeInOut` fade:
-  - "Reading surfaces…"
-  - "Scoring organization…"
-  - "Building your reset plan…"
-  - "Finding smart products…"
-  - "Generating concept preview…"
-- No cancel button (analysis is fast, ~5-10s)
+**Stage 3 — Analyzing (`.fraction(1.0)`)**
+- Photo as full-bleed blurred background (`.blur(radius: 14)`)
+- Centered overlay:
+  - Rotating gradient arc ring (teal→gold, `lineWidth 6`, 80×80) — `angularGradient` with `@State var rotation`
+  - "Analyzing your space…" `sectionTitle` `textPrimary`
+  - Status messages cycling with `.easeInOut(duration: 0.4)` fade, 2.5s interval:
+    `"Reading surfaces…"` → `"Scoring organization…"` → `"Building your reset plan…"` → `"Finding smart products…"` → `"Generating concept preview…"`
 
-**Stage 4 — Results (full-screen, same sheet)**
-- Cross-fade transition from loading state to results content
-- Results layout (see Section 7) renders inside the sheet's ScrollView
+**Stage 4 — Results (`.fraction(1.0)`, cross-fade from Stage 3)**
+Results content replaces loading content with `.transition(.opacity)`. See Section 8.
+
+**Stage 5 — Compare confirmation (`.medium`)**
+Sheet snaps back to `.medium` showing `ResetTrackingConfirmationView` content:
+- Score delta displayed as `"+X pts"` in `scoreSmall` `teal` (or `coral` if negative)
+- "Progress Saved" `sectionTitle`
+- Before/after score chips side by side
+- "View Full Comparison" `PrimaryButton` → navigates to `ProjectDetailView` Compare tab
+- "Done" `GhostButton` → dismisses sheet
 
 ---
 
-## 7. Results Screen
+## 8. Results Screen
 
-### ResultsView — Full rebuild (bindings and callbacks unchanged)
+### ResultsView — Full rebuild (ViewModel bindings unchanged)
 
-**Photo Hero (top, outside scroll — sticky)**
-- Full-width photo, 280pt tall, `cornerRadius 0` (sheet clips it)
-- Bottom gradient overlay: `background` → clear, bottom 50%
-- Over gradient: TagChip (mode) top-left, space title `screenTitle` bottom-left, score `scoreSmall` bottom-right
+Rendered inside the upload sheet at `.fraction(1.0)` detent. The sheet clips the top corners.
 
-**Scrollable content below hero:**
+**Photo hero (top of scroll content, full-width)**
+- `ProjectImageView` or `imageData` → Image, `frame(height: 280)`, `clipped()`
+- Gradient overlay: `LinearGradient([background, .clear], startPoint: .bottom, endPoint: .center)`, height 280, overlay aligned `.bottom`
+- Over gradient overlay (`.overlay(alignment: .bottomLeading)`): TagChip (mode, top-left via separate ZStack layer), space title `screenTitle` bottom-left, score `scoreSmall` `gold` bottom-right
 
-#### Score Card
-- Centered 120pt ScoreRing (gold arc, animated on appear)
-- Score interpretation label `label` `textSecondary`
-- `summaryText` `body`
-- `supportiveCoachingText` in italic serif `body` `textSecondary`
-- Time chip + interpretation chip HStack
+**Scrollable content (VStack below hero):**
 
-#### Metrics Accordion (collapsible)
-- Header row: "Score Breakdown" `sectionTitle` + chevron
-- 7 metric rows: label + animated horizontal bar + score number
-- Bar colors: coral (<40), gold (40-69), teal (70+)
-- Staggered `.spring` fill on appear
+**Score card (RMSCard)**
+- Centered `ScoreRing` 120pt, `ringProgress` animates on appear
+- Score interpretation `label` `textSecondary` below ring
+- `summaryText` `body` `textPrimary`
+- `supportiveCoachingText` `body` italic (`.italic()`) `textSecondary`
+- HStack: reset time TagChip + interpretation TagChip
 
-#### Reset Plan
-- "Your Reset Plan" `sectionTitle` + estimated time chip
-- Step rows: gold step number circle (32×32), title `bodyStrong`, detail `body` `textSecondary`, impact `label` `teal`
-- Dividers between steps
+**Metrics accordion (RMSCard, collapsible)**
+- Header HStack: "Score Breakdown" `sectionTitle` + chevron Button toggling `@State var metricsExpanded = true`
+- When expanded: 7 `MetricBar` rows with staggered `.spring` fill on appear
+- Bar colors: `coral` (<40), `gold` (40–69), `teal` (70+)
+- Below bars: "Best opportunities" `bodyStrong` + bullet list items
 
-#### Budget Path Picker
+**Reset Plan (RMSCard)**
+- "Your Reset Plan" `sectionTitle` + estimated time TagChip
+- Step rows: gold `Text("\(step.order)")` circle (32×32, `goldMuted` fill), title `bodyStrong`, detail `body` `textSecondary`, impact `label` `teal`
+- `Divider` `stroke` between steps
+
+**Budget path picker (no card wrapper — cards are the picker items)**
 - "Budget Options" `sectionTitle`
-- Horizontal scroll of 3 budget cards (220×160 each):
-  - Tier name `label`, spend `screenTitle`, 2-line why, item count badge
-  - Selected: `teal` border 1.5pt + `surfaceElevated` background
-  - Unselected: `surface` + `stroke`
-- Below picker: selected tier's top 3 product rows with "Open on Amazon" teal capsule button
+- Horizontal `ScrollView` of 3 `BudgetTierCard` views (220×160):
+  - Tier name `label` `textSecondary`, spend `screenTitle` `textPrimary`, 2-line why `body`, item count `micro` badge
+  - Selected: `teal` border 1.5pt + `surfaceElevated` bg; unselected: `surface` + `stroke`
+  - Press animation: `.scaleEffect(0.97)` via `ButtonStyle`
+- Below picker: selected tier's top 3 product rows (title `bodyStrong`, reason `body` `textSecondary`, "Open on Amazon" teal capsule button using `Link`)
 
-#### Action Strip (sticky bottom inside scroll — `.safeAreaInset`)
-- "Save Project" primary button (full width)
-- "View Shopping" secondary button
-- "See AI Concept" ghost button
+**Action strip (`.safeAreaInset(edge: .bottom)`)**
+- "Save Project" `PrimaryButton`
+- "View Shopping" `SecondaryButton` → navigates to `ShoppingView` (see Section 8a)
+- "See AI Concept" `GhostButton` → navigates to `VisualizationView` (see Section 8b)
+
+Navigation from results uses `NavigationStack` wrapping the sheet's content OR `@State var shoppingPath / visualizationPath` presented as nested sheets. Given this is already inside a sheet, use `NavigationStack` wrapping the `ResultsView` content with `.navigationBarHidden(true)` and `NavigationLink` for sub-screens.
+
+### 8a. ShoppingView (replaces ShoppingRecommendationsView + BudgetTierSelectorView)
+
+These two existing screens are merged into a single `ShoppingView`:
+- Header: "Shopping Tools" `screenTitle` + dismiss button
+- Tier picker: horizontal scroll of 3 `BudgetTierCard` views (same as results picker, 160×120)
+- Selected tier's full item list: `RMSCard` per item — title `bodyStrong`, price `sectionTitle` `gold`, reason `body` `textSecondary`, impact `label` `teal`, "Open on Amazon" teal capsule `Link`
+- File: `Features/Results/ShoppingView.swift`
+
+### 8b. VisualizationView init signature
+
+The rebuilt `VisualizationView` init: `VisualizationView(analysis: SpaceAnalysis, project: SpaceProject)`. `selectedBudgetTier` is dropped from the init — it is sourced locally as `@State var selectedBudgetTier: BudgetTier = .budget` within the view, matching the pattern used in `ShoppingView`. The view still displays a product items section using the locally-selected tier from `analysis.budgetRecommendations`.
+
+When reached from `ResultsView`: `NavigationLink` or sheet push passing the current `analysis` and `project`.
+When reached from `ProjectDetailView` Concept tab: passes `project.analyses.last` as the `analysis` argument (or an empty-state if `analyses` is empty).
+
+### 8c. CompareView init signature and dual entry point
+
+The rebuilt `CompareView` init: `CompareView(project: SpaceProject, comparison: ProjectComparison?, beforeAnalysis: SpaceAnalysis?, afterAnalysis: SpaceAnalysis?, onSave: (() -> Void)?)`. All parameters after `project` are optional to support both entry points.
+
+- **From upload flow** (Stage 4 results, mode = `.compareProgress`): `onSave` is provided (calls `viewModel.save(using: appModel)`), both analyses are present from `viewModel`.
+- **From `ProjectDetailView` Compare tab**: `onSave` is `nil` (already saved), analyses pulled from `project.analyses`. If `project.comparisons.isEmpty`, shows an empty state — "No comparison yet. Start a Compare Reset to see before/after progress."
+
+Stage 5 "View Full Comparison" button navigates to `ProjectDetailView` (not directly to `CompareView`) — specifically deep-linking to the Compare tab via `@Binding var selectedDetailTab: DetailTab` passed down.
+
+### 8d. StagingResultsView — Full rebuild
+
+Reached when `viewModel.draft.mode == .stageForSelling`. Replaces current `StagingResultsView` inside the upload sheet.
+
+Same photo hero as `ResultsView`. Score card uses `coral` ring accent instead of `gold`. Adds a "Staging Advice" `RMSCard` section:
+- Readiness score ring (80pt, `coral`)
+- Remove / Hide / Add three-column grid of item pills
+- "Quick Wins" `bodyStrong` + bullet list
+- "Showing Day Checklist" rows with tappable circular checkbox (`coral` when checked, `@State` local array `checkedItems: Set<UUID>`)
+
+Action strip: "Save Project" primary + "View Shopping" secondary + "See AI Concept" ghost (same as ResultsView).
+
+File: `Features/Staging/StagingResultsView.swift`
+
+### 8c. CompareView — Full rebuild
+
+Reached when `viewModel.draft.mode == .compareProgress`. Shows before/after comparison.
+
+- Photo hero: before photo fills left half, after photo fills right half, split by draggable vertical divider
+- Draggable divider: `DragGesture` updates `@State var dividerPosition: CGFloat = 0.5` (0–1 normalized)
+- Score delta card: `RMSCard` — large `"+X"` or `"-X"` in `scoreSmall` `teal`/`coral`, per-metric delta rows (green arrow up / red arrow down)
+- Summary text `body`
+- Action strip: "Save Comparison" primary + "View Full Analysis" secondary
+
+File: `Features/Compare/CompareView.swift`
+
+### 8d. VisualizationView — Full rebuild
+
+Reached from "See AI Concept" ghost button in results action strip.
+
+**Layout:**
+- Header: "Concept Preview" `screenTitle` + dismiss
+- If `generatedImageURL != nil`: side-by-side or stacked before/after (toggle `@State var layout: Layout`). Before = original photo, After = generated image. Draggable divider (same pattern as CompareView) in side-by-side mode.
+- If no generated image yet: centered generating state (same rotating arc ring + "Generating concept…"). Service call is triggered in `VisualizationViewModel` (already exists as `container.visualizationService`).
+- Below images: "What improved" bullet list in `RMSCard`, "Still needs work" bullet list, concept caption `body` italic.
+- Projected score chip: `gold` accent, "+X pts projected"
+
+File: `Features/Visualization/VisualizationView.swift`
 
 ---
 
-## 8. Projects Screen
+## 9. Projects Screen
 
 ### ProjectsView — Full rebuild
 
-**Header:** "Your Spaces" `displayTitle` serif
+**Header:** "Your Spaces" `displayTitle` serif + project count `micro` `textSecondary`
 
-**Filter strip:** All · Organized · Staged · Compared — horizontal scroll of pill chips
+**Filter strip:** All · Organized · Staged · Compared — `ScrollView(.horizontal)` pill chips. Filter applied to `appModel.projects` by `mode`.
 
-**Project cards:** Full-width, 220pt tall
-- Space photo as full-bleed background
-- Bottom gradient overlay (60% height)
-- Title `bodyStrong`, score chip, date `micro` — bottom-left
-- Mode tag chip — top-right
+**Project cards:** `LazyVStack` of full-width cards, 220pt tall:
+- `ProjectImageView` as full-bleed background image, `cornerRadius 24`
+- Bottom gradient overlay (60% height, `background` to `.clear`)
+- Title `bodyStrong` `textPrimary`, score chip, mode TagChip (top-right), date `micro` `textSecondary`
+- Tap → opens `ProjectDetailView` as a `.sheet`
 
-**Project Detail Sheet:**
-- Full-screen `.sheet`
-- Photo hero 280pt
-- Sliding tab indicator: Analysis · Shopping · Compare · Concept
-- Compare tab: two photos with draggable `DragGesture` vertical divider
-- Before/after score deltas shown as colored metric rows
+**Empty state:** Centered illustration placeholder, "No spaces yet" `sectionTitle`, "Tap ✦ to start your first reset" `body` `textSecondary`.
+
+### ProjectDetailView — New file, full-screen sheet
+
+Presented as `.sheet` (replacing existing push navigation).
+
+**Top:** Photo hero 280pt (same gradient overlay pattern). Dismiss button top-right.
+
+**Tab switcher:** Horizontal row of 4 tabs — Analysis · Shopping · Compare · Concept — with a sliding `teal` underline indicator (not iOS default). `@State var selectedTab: DetailTab`.
+
+**Analysis tab:** Score ring (120pt) + metrics accordion + reset plan. Same layout as ResultsView score/metrics/plan sections.
+
+**Shopping tab:** `ShoppingView` content embedded (same as Section 8a).
+
+**Compare tab:**
+- If `project.comparisons.isEmpty`: "No comparisons yet" empty state + "Start a Compare Reset" button
+- If comparisons exist: before/after draggable divider photos (same as CompareView pattern) + metric delta rows
+
+**Concept tab:**
+- If `project.analyses.last?.visualizationConcept?.generatedImageURL != nil`: shows the concept image full-width + what-improved / still-needs-work cards
+- Else: "Generate Concept" `PrimaryButton` which calls `container.visualizationService`
+
+File: `Features/Projects/ProjectDetailView.swift`
 
 ---
 
-## 9. Staging Hub
+## 10. Staging Hub
 
 ### StagingHubView — Full rebuild
 
-**Header:** "Stage Mode" `displayTitle` + coral accent
+**Data source:** `appModel.projects.filter { $0.mode == .stageForSelling }`. If multiple staging projects exist, the most recently updated is displayed. A project picker pill strip at the top allows switching. If no staging projects: empty state.
 
-**Readiness ring:** 160pt ScoreRing in coral accent (vs gold elsewhere)
+`StagingHubView` receives `onStartUpload: (UploadDraft) -> Void` from `RMSShellView`, matching the same callback pattern established in `HomeView`. It does not manage its own upload sheet state.
 
-**Showing Day Checklist:** Large tappable rows with circular checkbox (coral when checked), title `bodyStrong`
+**Empty state:** "Stage Mode" `displayTitle` + coral accent glow. "No staged spaces yet" `sectionTitle`. "Start a Staging Reset" `PrimaryButton` → `onStartUpload(UploadDraft(mode: .stageForSelling))`.
 
-**Recommendations grid:** 3 columns — Remove · Hide · Add — each with item pills
-
-**Footer:** "Share Staging Report" primary button (coral tint)
+**Non-empty layout:**
+1. Project picker strip (horizontal scroll of project title pills, selected = coral filled) — only if >1 staging project
+2. Coral `ScoreRing` 160pt (coral arc vs gold elsewhere), center: readiness score + "Ready to show" label
+3. "Showing Day Checklist" `sectionTitle` + `ForEach(checklist.checklistItems)` as tappable rows: circular checkbox (`coral` when `isDone`), title `bodyStrong`. Checkbox tap updates `@State var localChecklist` (view-local copy of checklist items).
+4. Recommendations grid: "Remove · Hide · Add" three-column header row + item pills per column
+5. "Share Staging Report" `PrimaryButton` (coral tint): this is a **future feature placeholder** — tapping shows an `AppNotice` "Coming soon — export your staging report as a PDF." No functional implementation required.
 
 ---
 
-## 10. Settings Screen
+## 11. Settings Screen
 
 ### SettingsView — Full rebuild
 
-Clean grouped sections on `background`. No NavigationList style — custom `VStack` sections.
+Custom `VStack` sections, no `List`. `ScrollView` on `background`.
 
-**Sections:**
-1. **Account** — avatar, name, email; "Edit Profile" row; "Sign Out" (coral text)
-2. **Preferences** — Theme (Light/Dark/System custom segmented), AI Quality Mode (Free/Budget/High custom segmented)
-3. **About** — App version, "Rate the App", "Privacy Policy", "Terms"
-4. **Danger Zone** — "Delete Account" coral destructive button, confirmation alert
+**Account section (RMSCard):**
+- Avatar circle (48×48) + display name `sectionTitle` + email `label` `textSecondary`
+- "Edit Profile" row (name + email edit fields in an inline expansion, toggled by `@State var isEditingProfile`)
+- "Sign Out" `DestructiveButton` — calls `appModel.signOut()`, no confirmation needed (non-destructive data-wise)
 
----
+**Preferences section (RMSCard):**
+- "Theme" row: custom 3-option segmented (Light / Dark / System) with sliding capsule, drives `themeStore.preference`
+- "AI Quality" row: custom 3-option segmented (Free / Budget / High) — **display only**. Adding live control would require modifying `AppContainer` and the services that consume `qualityMode` at bootstrap time, which is out of scope for this rebuild. The control renders with "Free" permanently selected and a `micro` `textTertiary` note "Quality changes take effect on next launch — coming soon." No service-layer changes required.
 
-## 11. File Structure
+**About section (RMSCard):**
+- App version row (`micro` `textTertiary`)
+- "Rate the App" → `UIApplication.shared.open` to App Store URL
+- "Privacy Policy" → Link
+- "Terms of Service" → Link
 
-All new/modified files under `REASON/Features/` and `REASON/Core/`:
-
-**Core (updated):**
-- `Core/Theme/BrandColor.swift` — updated color tokens
-- `Core/Theme/BrandTypography.swift` — updated type scale
-- `Core/Components/RMSCard.swift` — replaces BrandCard
-- `Core/Components/RMSButton.swift` — replaces BrandButton + ActionLabel
-- `Core/Components/ScoreRing.swift` — new Canvas-based ring
-- `Core/Components/RMSNavPill.swift` — new floating nav
-- `Core/Components/TagChip.swift` — updated
-- `Core/Components/MetricBar.swift` — updated with animation
-
-**Features (rebuilt):**
-- `Features/Shell/RMSShellView.swift` — replaces MainTabView
-- `Features/Onboarding/OnboardingView.swift`
-- `Features/Auth/AuthView.swift`
-- `Features/Home/HomeView.swift`
-- `Features/Upload/UploadFlowContainerView.swift`
-- `Features/Results/ResultsView.swift`
-- `Features/Projects/ProjectsView.swift`
-- `Features/Projects/ProjectDetailView.swift`
-- `Features/Staging/StagingHubView.swift`
-- `Features/Settings/SettingsView.swift`
-
-**Unchanged:** All ViewModels, all Services, all Models, AppContainer, AppModel.
+**Danger Zone section (standalone, no card):**
+- "Delete Account" `DestructiveButton` → confirmation `.alert` before calling `appModel.deleteAccount()`
 
 ---
 
-## 12. Implementation Notes
+## 12. File Structure
 
-- All existing `EnvironmentObject` injection patterns preserved
-- `AppShellView` updated to use `RMSShellView`
-- `BrandCard`, `BrandButton`, `PrimaryActionButton`, `SecondaryActionButton`, `ActionLabel` kept as typealiases or deprecated — new code uses `RMSCard`, `RMSButton`
-- `ProjectDetailView` is a new file (currently referenced but not in features list)
-- The draggable before/after divider in Compare uses `DragGesture` with a `@State var dividerPosition: CGFloat`
-- Score ring uses `Canvas` with `context.stroke(path, with: .linearGradient(...))`
-- The rotating analyzing ring uses `@State var rotation: Double` + `.onAppear { withAnimation(.linear(duration: 1.25).repeatForever(autoreverses: false)) { rotation = 360 } }`
+### New or fully rebuilt files:
+```
+REASON/Core/Theme/BrandColor.swift              (rebuilt)
+REASON/Core/Theme/BrandTypography.swift         (rebuilt)
+REASON/Core/Components/RMSCard.swift            (new — replaces BrandCard)
+REASON/Core/Components/RMSButton.swift          (new — replaces BrandButton, ActionLabel)
+REASON/Core/Components/ScoreRing.swift          (new)
+REASON/Core/Components/RMSNavPill.swift         (new)
+REASON/Core/Components/TagChip.swift            (rebuilt)
+REASON/Core/Components/MetricBar.swift          (rebuilt — was MetricBarView)
+
+REASON/Features/Shell/RMSShellView.swift        (new)
+REASON/Features/Splash/SplashView.swift         (modified — background color only)
+REASON/Features/Onboarding/OnboardingView.swift (rebuilt)
+REASON/Features/Auth/AuthView.swift             (rebuilt)
+REASON/Features/Home/HomeView.swift             (rebuilt)
+REASON/Features/Upload/UploadFlowContainerView.swift (rebuilt)
+REASON/Features/Results/ResultsView.swift       (rebuilt)
+REASON/Features/Results/ShoppingView.swift      (new — merges ShoppingRecommendationsView + BudgetTierSelectorView)
+REASON/Features/Staging/StagingResultsView.swift (rebuilt)
+REASON/Features/Staging/StagingHubView.swift    (rebuilt)
+REASON/Features/Compare/CompareView.swift       (rebuilt)
+REASON/Features/Visualization/VisualizationView.swift (rebuilt)
+REASON/Features/Projects/ProjectsView.swift     (rebuilt)
+REASON/Features/Projects/ProjectDetailView.swift (new)
+REASON/Features/Settings/SettingsView.swift     (rebuilt)
+```
+
+### Modified (not rebuilt):
+```
+REASON/App/AppShellView.swift   — .main case uses RMSShellView instead of MainTabView
+```
+
+### Deleted:
+```
+REASON/Features/Home/MainTabView.swift
+REASON/Features/Analysis/AnalysisLoadingView.swift    (replaced by Stage 3 inline in UploadFlowContainerView)
+REASON/Core/Components/BrandCard.swift
+REASON/Core/Components/BrandButton.swift
+REASON/Core/Components/ActionLabel.swift
+REASON/Core/Components/MetricBarView.swift
+REASON/Core/Components/BrandBackground.swift
+REASON/Core/Components/SectionHeader.swift
+```
+
+### Unchanged (not touched):
+All ViewModels, all Services, all Models, AppContainer, AppModel, AppConsole, AppError, SampleSeed, ReferenceImageLoader, JSONResponseSanitizer, ScoreEngine, ProjectImageView, ReferenceImageView, ScoreChip.
+
+---
+
+## 13. Implementation Notes
+
+- `ScoreRing` uses `Canvas` + `.angularGradient` (not `linearGradient`) for a smooth color sweep along the arc path. The gradient angle is mapped to the arc's sweep angle.
+- `AppShellView` is modified to replace `MainTabView()` with `RMSShellView()` in the `.main` rootDestination case.
+- The `NavigationStack` that previously wrapped each tab now wraps the content inside each tab slot in `RMSShellView`.
+- `ProjectDetailView` is presented as a `.sheet` from `ProjectsView` and from the recent projects strip in `HomeView`. It uses its own internal `NavigationStack` for the tab content if sub-navigation is needed.
+- `ShoppingRecommendationsView` and `BudgetTierSelectorView` (in old `ResultsView.swift`) are replaced by `ShoppingView.swift`. The `ResultsView` navigation links to `ShoppingView`.
+- The `DragGesture` divider in `CompareView` and `ProjectDetailView` compare tab: `@State var dividerOffset: CGFloat = 0` updated via `.onChanged { dividerOffset = $0.translation.width }`, bounded by `GeometryReader` width, normalized to 0–1 for the overlay mask.
+- `@State var localChecklist: [ChecklistItem]` in `StagingHubView` is initialized from the project's checklist in `.onAppear` and not persisted back (staging checklist persistence is a future feature).
+- "Share Staging Report" shows `appModel.notice = AppNotice(title: "Coming Soon", message: "PDF export is coming in a future update.")`.
+- `MetricBar` collapse state is `@State var metricsExpanded = true` in `ResultsView` — view-local, not in ViewModel.
+- The rotating analyzing ring: `@State var rotation: Double = 0`. On appear: `withAnimation(.linear(duration: 1.25).repeatForever(autoreverses: false)) { rotation = 360 }`. The arc is drawn using `Canvas` with an `angularGradient` color sweep.
