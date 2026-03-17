@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct ScoreChip: View {
-    @Environment(\.colorScheme) private var colorScheme
-
     let score: Int
     let title: String
 
@@ -15,10 +13,10 @@ struct ScoreChip: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(BrandTypography.sectionTitle)
-                    .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+                    .foregroundStyle(BrandColor.textPrimary)
                 Text(scoreLabel)
-                    .font(BrandTypography.caption)
-                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+                    .font(BrandTypography.label)
+                    .foregroundStyle(BrandColor.textSecondary)
             }
 
             Spacer()
@@ -29,8 +27,8 @@ struct ScoreChip: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            scoreColor.opacity(colorScheme == .dark ? 0.24 : 0.14),
-                            BrandColor.secondarySurface(for: colorScheme)
+                            scoreColor.opacity(0.20),
+                            BrandColor.surface
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -38,7 +36,7 @@ struct ScoreChip: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+                        .stroke(BrandColor.stroke, lineWidth: 1)
                 )
         )
     }
@@ -47,7 +45,7 @@ struct ScoreChip: View {
         switch score {
         case ..<40: BrandColor.coral
         case ..<60: BrandColor.gold
-        case ..<75: BrandColor.softTeal
+        case ..<75: BrandColor.tealMuted
         default: BrandColor.teal
         }
     }
