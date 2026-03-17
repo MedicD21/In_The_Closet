@@ -266,7 +266,8 @@ struct UploadFlowContainerView: View {
                         StagingResultsView(
                             analysis: analysis,
                             project: project,
-                            selectedBudgetTier: $viewModel.selectedBudgetTier
+                            selectedBudgetTier: $viewModel.selectedBudgetTier,
+                            visualizationService: container.visualizationService
                         ) {
                             Task { await viewModel.save(using: appModel); onDismiss() }
                         }
@@ -286,6 +287,7 @@ struct UploadFlowContainerView: View {
                             analysis: analysis,
                             project: project,
                             imageData: viewModel.draft.selectedImageData,
+                            visualizationService: container.visualizationService,
                             selectedBudgetTier: $viewModel.selectedBudgetTier
                         ) {
                             Task { await viewModel.save(using: appModel); onDismiss() }

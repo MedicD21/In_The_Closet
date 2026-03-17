@@ -4,6 +4,7 @@ struct ResultsView: View {
     let analysis: SpaceAnalysis
     let project: SpaceProject
     let imageData: Data?
+    let visualizationService: VisualizationService
     @Binding var selectedBudgetTier: BudgetTier
     let onSave: () -> Void
 
@@ -33,7 +34,7 @@ struct ResultsView: View {
         }
         .navigationDestination(isPresented: $visualizationPath) {
             VisualizationView(analysis: analysis, project: project,
-                              selectedBudgetTier: selectedBudgetTier)
+                              visualizationService: visualizationService)
         }
     }
 
