@@ -164,6 +164,7 @@ struct VisualizationView: View {
     }
 
     private func loadConcept() async {
+        guard !isLoading, concept == nil else { return }
         isLoading = true
         errorMessage = nil
         do {

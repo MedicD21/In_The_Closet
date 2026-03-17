@@ -99,7 +99,6 @@ struct CompareView: View {
                                     .font(.system(size: 10, weight: .bold))
                                     .foregroundColor(BrandColor.background)
                             )
-                            .offset(x: geo.size.width * dividerPosition - 1)
                             .gesture(
                                 DragGesture()
                                     .onChanged { value in
