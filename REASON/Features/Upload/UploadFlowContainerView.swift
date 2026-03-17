@@ -1,297 +1,408 @@
-import PhotosUI
 import SwiftUI
+import PhotosUI
 
 struct UploadFlowContainerView: View {
-    @EnvironmentObject private var appModel: AppModel
-    @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel: UploadFlowViewModel
+    let container: AppContainer
+    let initialDraft: UploadDraft
+    let onDismiss: () -> Void
 
-    init(container: AppContainer, currentUser: UserProfile, existingProject: SpaceProject? = nil, initialDraft: UploadDraft) {
-        _viewModel = StateObject(
-            wrappedValue: UploadFlowViewModel(
-                container: container,
-                currentUser: currentUser,
-                existingProject: existingProject,
-                initialDraft: initialDraft
-            )
+    @ObservedObject var appModel: AppModel
+    @StateObject private var viewModel: UploadFlowViewModel
+    @State private var sheetDetent: PresentationDetent = .medium
+    @State private var rotation: Double = 0
+    @State private var statusIndex = 0
+    @State private var photosItem: PhotosPickerItem?
+    @State private var statusTimer: Timer?
+
+    private let statusMessages = [
+        "Reading surfaces…",
+        "Scoring organization…",
+        "Building your reset plan…",
+        "Finding smart products…",
+        "Generating concept preview…"
+    ]
+
+    init(container: AppContainer, appModel: AppModel, currentUser: UserProfile?,
+         initialDraft: UploadDraft, onDismiss: @escaping () -> Void) {
+        self.container = container
+        self.initialDraft = initialDraft
+        self.onDismiss = onDismiss
+        self._appModel = ObservedObject(wrappedValue: appModel)
+        // Fall back to a minimal guest profile if needed; auth flow should prevent nil
+        let effectiveUser = currentUser ?? UserProfile(
+            id: UUID(), email: "", displayName: "Guest",
+            avatarURL: nil, createdAt: .now, updatedAt: .now,
+            preferredTheme: .system, preferredTone: "warm",
+            onboardingCompleted: true, authMethod: .guest
         )
+        _viewModel = StateObject(wrappedValue: UploadFlowViewModel(
+            container: container,
+            currentUser: effectiveUser,
+            initialDraft: initialDraft
+        ))
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                switch viewModel.step {
-                case .chooseSpace:
-                    ChooseSpaceTypeView(draft: $viewModel.draft) {
-                        viewModel.continueFromSpaceSelection()
-                    }
-                case .customName:
-                    CustomSpaceNameView(name: $viewModel.draft.customSpaceName) {
-                        viewModel.continueFromCustomName()
-                    }
-                case .upload:
-                    PhotoUploadView(viewModel: viewModel)
-                case .analyzing:
-                    AnalysisLoadingView(mode: viewModel.draft.mode)
-                case .results:
-                    resultsDestination
-                case .confirmation:
-                    ResetTrackingConfirmationView(
-                        projectTitle: viewModel.project?.title ?? "Project",
-                        delta: viewModel.comparison?.scoreDelta ?? 0
-                    ) {
-                        dismiss()
-                    }
-                }
+        ZStack {
+            BrandColor.surface.ignoresSafeArea()
+            content
+        }
+        .presentationDetents([.medium, .large, .fraction(1.0)], selection: $sheetDetent)
+        .presentationDragIndicator(.hidden)
+        .onChange(of: viewModel.step) { _, newStep in
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+                sheetDetent = detent(for: newStep)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .navigationTitle(navigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                    .foregroundStyle(BrandColor.teal)
-                }
-            }
-            .alert(
-                "Something Needs Attention",
-                isPresented: Binding(
-                    get: { viewModel.errorMessage != nil },
-                    set: { if !$0 { viewModel.errorMessage = nil } }
-                ),
-                actions: {
-                    Button("OK", role: .cancel) { }
-                },
-                message: {
-                    Text(viewModel.errorMessage ?? "")
-                }
-            )
+        }
+        .alert(
+            "Something went wrong",
+            isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if !$0 { viewModel.errorMessage = nil } }
+            ),
+            actions: { Button("OK", role: .cancel) {} },
+            message: { Text(viewModel.errorMessage ?? "") }
+        )
+    }
+
+    private func detent(for step: UploadFlowViewModel.Step) -> PresentationDetent {
+        switch step {
+        case .chooseSpace, .customName: return .medium
+        case .upload:                  return .large
+        case .analyzing, .results:     return .fraction(1.0)
+        case .confirmation:            return .medium
         }
     }
 
     @ViewBuilder
-    private var resultsDestination: some View {
-        if viewModel.draft.mode == .stageForSelling, let analysis = viewModel.analysis, let project = viewModel.project {
-            StagingResultsView(
-                analysis: analysis,
-                project: project,
-                selectedBudgetTier: $viewModel.selectedBudgetTier
-            ) {
-                Task {
-                    await viewModel.save(using: appModel)
-                    dismiss()
-                }
-            }
-        } else if viewModel.draft.mode == .compareProgress,
-                  let analysis = viewModel.analysis,
-                  let comparison = viewModel.comparison,
-                  let project = viewModel.project,
-                  let previous = project.analyses.dropLast().last {
-            CompareView(
-                beforeAnalysis: previous,
-                afterAnalysis: analysis,
-                comparison: comparison,
-                project: project
-            ) {
-                Task {
-                    await viewModel.save(using: appModel)
-                }
-            }
-        } else if let analysis = viewModel.analysis, let project = viewModel.project {
-            ResultsView(
-                analysis: analysis,
-                project: project,
-                imageData: viewModel.draft.selectedImageData,
-                selectedBudgetTier: $viewModel.selectedBudgetTier
-            ) {
-                Task {
-                    await viewModel.save(using: appModel)
-                    dismiss()
-                }
-            }
-        }
-    }
-
-    private var navigationTitle: String {
+    private var content: some View {
         switch viewModel.step {
-        case .chooseSpace: "Choose Space Type"
-        case .customName: "Name Your Space"
-        case .upload: "Upload Photo"
-        case .analyzing: "Analyzing"
-        case .results: "Results"
-        case .confirmation: "Progress Saved"
+        case .chooseSpace, .customName:
+            stage1View
+        case .upload:
+            stage2View
+        case .analyzing:
+            stage3AnalyzingView
+        case .results:
+            stage4ResultsView
+        case .confirmation:
+            stage5ConfirmationView
         }
     }
-}
 
-private struct ChooseSpaceTypeView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @Binding var draft: UploadDraft
-    let onContinue: () -> Void
+    // MARK: — Stage 1: Choose photo + space type
+    private var stage1View: some View {
+        VStack(spacing: 20) {
+            sheetHandle
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                SectionHeader(title: "Pick the space you're resetting", subtitle: "You can always refine the name and mode on the next screen.")
+            Image(systemName: "camera.viewfinder")
+                .font(.system(size: 48))
+                .foregroundColor(BrandColor.teal)
 
-                ForEach(SpaceType.allCases, id: \.id) { type in
-                    Button {
-                        draft.spaceType = type
-                    } label: {
-                        HStack(spacing: 14) {
-                            Image(systemName: type.iconName)
-                                .frame(width: 42, height: 42)
-                                .background(type == draft.spaceType ? BrandColor.teal.opacity(0.18) : BrandColor.gold.opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(type.displayName)
-                                    .font(BrandTypography.bodyStrong)
-                                    .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                                Text(type == .custom ? "Kitchen cabinet, entry drop zone, linen shelf, and more." : "Use a tailored reset flow for this space.")
-                                    .font(BrandTypography.caption)
-                                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                            }
-                            Spacer()
-                            if type == draft.spaceType {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(BrandColor.teal)
+            Text("Choose a space")
+                .font(BrandTypography.sectionTitle)
+                .foregroundColor(BrandColor.textPrimary)
+
+            PhotosPicker(selection: $photosItem, matching: .images) {
+                PrimaryButton("Choose from Library") {}
+            }
+            .onChange(of: photosItem) { _, newItem in
+                Task {
+                    do {
+                        if let data = try await newItem?.loadTransferable(type: Data.self) {
+                            viewModel.draft.selectedImageData = data
+                            viewModel.continueFromSpaceSelection()
+                        }
+                    } catch {
+                        viewModel.errorMessage = "Could not load the selected photo. Please try again."
+                    }
+                }
+            }
+
+            GhostButton(title: "Skip to space type →") {
+                viewModel.continueFromSpaceSelection()
+            }
+
+            spaceTypeScroll
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 32)
+    }
+
+    // MARK: — Stage 2: Upload / confirm
+    private var stage2View: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 16) {
+                sheetHandle
+
+                if let data = viewModel.draft.selectedImageData, let uiImg = UIImage(data: data) {
+                    Image(uiImage: uiImg)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 220)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(BrandColor.gold, lineWidth: 1)
+                        )
+                } else {
+                    // No image yet — show photo picker again
+                    PhotosPicker(selection: $photosItem, matching: .images) {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(BrandColor.surfaceElevated)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 140)
+                            .overlay(
+                                VStack(spacing: 8) {
+                                    Image(systemName: "photo.badge.plus")
+                                        .font(.system(size: 32))
+                                        .foregroundColor(BrandColor.teal)
+                                    Text("Add Photo")
+                                        .font(BrandTypography.label)
+                                        .foregroundColor(BrandColor.textSecondary)
+                                }
+                            )
+                    }
+                    .onChange(of: photosItem) { _, newItem in
+                        Task {
+                            do {
+                                if let data = try await newItem?.loadTransferable(type: Data.self) {
+                                    viewModel.draft.selectedImageData = data
+                                }
+                            } catch {
+                                viewModel.errorMessage = "Could not load the selected photo. Please try again."
                             }
                         }
-                        .padding(18)
-                        .background(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                .fill(BrandColor.surface(for: colorScheme))
+                    }
+                }
+
+                spaceTypeScroll
+                modePicker
+
+                Spacer(minLength: 0)
+
+                PrimaryButton(
+                    "Analyze My Space",
+                    isDisabled: viewModel.draft.selectedImageData == nil && viewModel.draft.imageAssetName == nil
+                ) {
+                    Task { await viewModel.runAnalysis() }
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
+        }
+    }
+
+    // MARK: — Stage 3: Analyzing
+    private var stage3AnalyzingView: some View {
+        ZStack {
+            if let data = viewModel.draft.selectedImageData, let img = UIImage(data: data) {
+                Image(uiImage: img)
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                    .blur(radius: 14)
+            }
+            BrandColor.overlay.ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                ZStack {
+                    Circle()
+                        .stroke(BrandColor.textTertiary.opacity(0.2), lineWidth: 6)
+                        .frame(width: 80, height: 80)
+
+                    Canvas { ctx, sz in
+                        let center = CGPoint(x: sz.width / 2, y: sz.height / 2)
+                        let startAngle = Angle.degrees(-90)
+                        let endAngle = Angle.degrees(230)
+                        var path = Path()
+                        path.addArc(center: center, radius: 37,
+                                    startAngle: startAngle, endAngle: endAngle, clockwise: false)
+                        ctx.stroke(
+                            path,
+                            with: .angularGradient(
+                                Gradient(colors: [BrandColor.teal, BrandColor.gold]),
+                                center: center,
+                                startAngle: startAngle,
+                                endAngle: endAngle
+                            ),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round)
                         )
                     }
-                    .buttonStyle(.plain)
+                    .frame(width: 80, height: 80)
+                    .rotationEffect(.degrees(rotation))
+                }
+                .onAppear {
+                    withAnimation(.linear(duration: 1.25).repeatForever(autoreverses: false)) {
+                        rotation = 360
+                    }
+                    startStatusCycling()
+                }
+                .onDisappear {
+                    statusTimer?.invalidate()
+                    statusTimer = nil
                 }
 
-                PrimaryActionButton("Continue") {
-                    onContinue()
-                }
-                .padding(.top, 8)
+                Text("Analyzing your space…")
+                    .font(BrandTypography.sectionTitle)
+                    .foregroundColor(BrandColor.textPrimary)
+
+                Text(statusMessages[statusIndex])
+                    .font(BrandTypography.body)
+                    .foregroundColor(BrandColor.textSecondary)
+                    .animation(.easeInOut(duration: 0.4), value: statusIndex)
             }
         }
     }
-}
 
-private struct CustomSpaceNameView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @Binding var name: String
-    let onContinue: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            SectionHeader(title: "Name the space", subtitle: "Examples: Linen Closet, Under Sink, Entryway Drop Zone")
-            TextField("Custom space name", text: $name)
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(BrandColor.surface(for: colorScheme))
-                )
-
-            PrimaryActionButton("Continue") {
-                onContinue()
+    // MARK: — Stage 4: Results
+    @ViewBuilder
+    private var stage4ResultsView: some View {
+        if let analysis = viewModel.analysis, let project = viewModel.project {
+            NavigationStack {
+                Group {
+                    if viewModel.draft.mode == .stageForSelling {
+                        StagingResultsView(
+                            analysis: analysis,
+                            project: project,
+                            selectedBudgetTier: $viewModel.selectedBudgetTier,
+                            visualizationService: container.visualizationService
+                        ) {
+                            Task { await viewModel.save(using: appModel); onDismiss() }
+                        }
+                    } else if viewModel.draft.mode == .compareProgress,
+                              let comparison = viewModel.comparison,
+                              let previous = project.analyses.dropLast().last {
+                        CompareView(
+                            beforeAnalysis: previous,
+                            afterAnalysis: analysis,
+                            comparison: comparison,
+                            project: project
+                        ) {
+                            Task { await viewModel.save(using: appModel) }
+                        }
+                    } else {
+                        ResultsView(
+                            analysis: analysis,
+                            project: project,
+                            imageData: viewModel.draft.selectedImageData,
+                            visualizationService: container.visualizationService,
+                            selectedBudgetTier: $viewModel.selectedBudgetTier
+                        ) {
+                            Task { await viewModel.save(using: appModel); onDismiss() }
+                        }
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Close") { onDismiss() }
+                            .foregroundColor(BrandColor.teal)
+                    }
+                }
             }
-
-            Spacer()
+        } else {
+            // Fallback: analysis data missing at results step — surface error and allow dismissal
+            VStack(spacing: 20) {
+                sheetHandle
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.system(size: 40))
+                    .foregroundColor(BrandColor.coral)
+                Text("Something went wrong")
+                    .font(BrandTypography.sectionTitle)
+                    .foregroundColor(BrandColor.textPrimary)
+                GhostButton(title: "Dismiss") { onDismiss() }
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 32)
         }
     }
-}
 
-private struct PhotoUploadView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @ObservedObject var viewModel: UploadFlowViewModel
-    @State private var selectedItem: PhotosPickerItem?
+    // MARK: — Stage 5: Confirmation
+    private var stage5ConfirmationView: some View {
+        VStack(spacing: 20) {
+            sheetHandle
 
-    var body: some View {
-        let hasImage = viewModel.draft.selectedImageData != nil
-        let scheme = colorScheme
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                SectionHeader(title: "Add your photo", subtitle: "Single-photo analysis is live in v1, with room for extra angles later.")
+            Text("Progress Saved")
+                .font(BrandTypography.sectionTitle)
+                .foregroundColor(BrandColor.textPrimary)
 
-                ProjectImageView(
-                    projectImage: viewModel.project?.images.last,
-                    imageData: viewModel.draft.selectedImageData
-                )
-                .frame(height: 260)
+            if let delta = viewModel.comparison?.scoreDelta,
+               let afterScore = viewModel.analysis?.score.totalScore {
+                let beforeScore = afterScore - delta
+                Text(delta >= 0 ? "+\(delta) pts" : "\(delta) pts")
+                    .font(BrandTypography.scoreSmall)
+                    .foregroundColor(delta >= 0 ? BrandColor.teal : BrandColor.coral)
 
-                PhotosPicker(selection: $selectedItem, matching: .images) {
-                    HStack {
-                        Text(hasImage ? "Replace Photo" : "Choose Photo")
-                            .font(BrandTypography.button)
-                            .foregroundStyle(BrandColor.primaryText(for: scheme))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                    }
-                    .background(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(BrandColor.surface(for: scheme))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .stroke(BrandColor.divider(for: scheme), lineWidth: 1)
-                            )
-                    )
+                HStack(spacing: 16) {
+                    TagChip(title: "Before: \(beforeScore)", accent: BrandColor.textSecondary)
+                    Image(systemName: "arrow.right")
+                        .foregroundColor(BrandColor.textTertiary)
+                    TagChip(title: "After: \(afterScore)", accent: BrandColor.teal)
                 }
-                .onChange(of: selectedItem) { _, item in
-                    guard let item else { return }
-                    Task {
-                        if let data = try? await item.loadTransferable(type: Data.self) {
-                            viewModel.draft.selectedImageData = data
-                            viewModel.draft.imageAssetName = nil
-                        }
-                    }
-                }
+            }
 
-                SecondaryActionButton(title: "Use Sample Pantry Photo") {
-                    viewModel.draft.imageAssetName = "PantrySample"
-                    viewModel.draft.selectedImageData = nil
-                }
+            PrimaryButton("View Full Comparison") { onDismiss() }
+            GhostButton(title: "Done") { onDismiss() }
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 32)
+    }
 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Mode")
-                        .font(BrandTypography.sectionTitle)
-                        .foregroundStyle(BrandColor.primaryText(for: colorScheme))
+    // MARK: — Shared subviews
+    private var sheetHandle: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(BrandColor.textTertiary)
+            .frame(width: 36, height: 4)
+            .padding(.top, 8)
+    }
 
-                    ForEach(ProjectMode.allCases, id: \.id) { mode in
-                        Button {
-                            viewModel.draft.mode = mode
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(mode.longLabel)
-                                        .font(BrandTypography.bodyStrong)
-                                    Text(mode == .organize ? "Get a warm reset plan and shopping suggestions." : mode == .stageForSelling ? "Focus on listing- and showing-ready presentation." : "Measure progress with an updated photo.")
-                                        .font(BrandTypography.caption)
-                                }
-                                Spacer()
-                                if viewModel.draft.mode == mode {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(BrandColor.teal)
-                                }
-                            }
-                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                            .padding(16)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .fill(BrandColor.surface(for: colorScheme))
-                            )
-                        }
-                        .buttonStyle(.plain)
+    private var spaceTypeScroll: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(SpaceType.allCases.filter { $0 != .custom }, id: \.self) { type in
+                    let isSelected = viewModel.draft.spaceType == type
+                    Button { viewModel.draft.spaceType = type } label: {
+                        Text(type.displayName)
+                            .font(BrandTypography.label)
+                            .foregroundColor(isSelected ? BrandColor.textPrimary : BrandColor.textSecondary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(isSelected ? BrandColor.teal : BrandColor.surfaceElevated)
+                            .clipShape(Capsule())
                     }
                 }
+            }
+            .padding(.horizontal, 24)
+        }
+    }
 
-                PrimaryActionButton("Analyze This Space", systemImage: "sparkles") {
-                    Task {
-                        await viewModel.runAnalysis()
-                    }
+    private var modePicker: some View {
+        HStack(spacing: 0) {
+            ForEach([ProjectMode.organize, .stageForSelling, .compareProgress], id: \.self) { mode in
+                let isSelected = viewModel.draft.mode == mode
+                Button { withAnimation { viewModel.draft.mode = mode } } label: {
+                    Text(mode.displayName)
+                        .font(BrandTypography.label)
+                        .foregroundColor(isSelected ? BrandColor.textPrimary : BrandColor.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(isSelected ? BrandColor.teal : Color.clear)
+                        .clipShape(Capsule())
                 }
-                .disabled(viewModel.draft.selectedImageData == nil && viewModel.draft.imageAssetName == nil)
-                .opacity((viewModel.draft.selectedImageData == nil && viewModel.draft.imageAssetName == nil) ? 0.6 : 1)
+            }
+        }
+        .background(BrandColor.surfaceElevated)
+        .clipShape(Capsule())
+    }
+
+    private func startStatusCycling() {
+        statusTimer?.invalidate()
+        statusTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { timer in
+            withAnimation { statusIndex = (statusIndex + 1) % statusMessages.count }
+            if viewModel.step != .analyzing {
+                timer.invalidate()
+                statusTimer = nil
             }
         }
     }

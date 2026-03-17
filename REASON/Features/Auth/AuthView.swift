@@ -1,187 +1,260 @@
 import SwiftUI
 
 struct AuthView: View {
-    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var appModel: AppModel
     @StateObject private var viewModel = AuthViewModel()
 
+    @State private var appeared = false
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                VStack(alignment: .leading, spacing: 12) {
-                    TagChip(title: "Secure sync for your spaces", accent: BrandColor.teal)
-                    Text("Welcome back to Reset My Space")
-                        .font(BrandTypography.screenTitle)
-                        .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                    Text("Sign in to save projects, compare progress, and build staged shopping lists over time.")
-                        .font(BrandTypography.body)
-                        .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                        .multilineTextAlignment(.leading)
+        ZStack {
+            BrandColor.background.ignoresSafeArea()
+            RadialGradient(
+                colors: [BrandColor.tealMuted, .clear],
+                center: .topTrailing,
+                startRadius: 0,
+                endRadius: 380
+            )
+            .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    Spacer(minLength: 60)
+
+                    // App icon + title
+                    VStack(spacing: 12) {
+                        Image("AppIcon")
+                            .resizable()
+                            .frame(width: 56, height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                        Text("Reset My Space")
+                            .font(BrandTypography.displayTitle)
+                            .foregroundColor(BrandColor.textPrimary)
+                    }
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 8)
+
+                    // Sign In / Sign Up segmented control
+                    segmentedControl
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 8)
+                        .animation(.spring(response: 0.5).delay(0.06), value: appeared)
+
+                    // Fields + primary action
+                    fieldsSection
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.spring(response: 0.5).delay(0.12), value: appeared)
+
+                    // Social + guest
+                    socialSection
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.spring(response: 0.5).delay(0.18), value: appeared)
+
+                    Spacer(minLength: 40)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 56)
+                .padding(.horizontal, 24)
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.5)) { appeared = true }
+        }
+    }
 
-                BrandCard {
-                    VStack(spacing: 18) {
-                        Picker("Auth Mode", selection: $viewModel.isSigningUp) {
-                            Text("Sign In").tag(false)
-                            Text("Sign Up").tag(true)
-                        }
-                        .pickerStyle(.segmented)
+    // MARK: — Segmented control
 
-                        if viewModel.isSigningUp {
-                            textField("Name", text: $viewModel.name)
-                        }
+    private var segmentedControl: some View {
+        GeometryReader { geo in
+            ZStack(alignment: viewModel.isSigningUp ? .trailing : .leading) {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(BrandColor.surfaceElevated)
 
-                        textField("Email", text: $viewModel.email, keyboard: .emailAddress)
-                        secureField("Password", text: $viewModel.password)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(BrandColor.teal)
+                    .frame(width: geo.size.width / 2, height: 36)
+                    .padding(.horizontal, 4)
+                    .animation(.spring(response: 0.4), value: viewModel.isSigningUp)
 
-                        PrimaryActionButton(viewModel.isSigningUp ? "Create Account" : "Sign In") {
-                            Task {
-                                await handlePrimaryAction()
-                            }
-                        }
+                HStack(spacing: 0) {
+                    Button("Sign In") {
+                        withAnimation { viewModel.isSigningUp = false }
+                    }
+                    .font(BrandTypography.button)
+                    .foregroundColor(!viewModel.isSigningUp ? BrandColor.textPrimary : BrandColor.textSecondary)
+                    .frame(maxWidth: .infinity)
 
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .tint(BrandColor.teal)
-                        }
+                    Button("Sign Up") {
+                        withAnimation { viewModel.isSigningUp = true }
+                    }
+                    .font(BrandTypography.button)
+                    .foregroundColor(viewModel.isSigningUp ? BrandColor.textPrimary : BrandColor.textSecondary)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .frame(height: 44)
+    }
+
+    // MARK: — Fields
+
+    private var fieldsSection: some View {
+        VStack(spacing: 12) {
+            if viewModel.isSigningUp {
+                styledTextField("Name", text: $viewModel.name)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .top).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+            }
+
+            styledTextField("Email", text: $viewModel.email)
+                .keyboardType(.emailAddress)
+                .autocapitalization(.none)
+
+            styledSecureField("Password", text: $viewModel.password)
+
+            PrimaryButton(
+                viewModel.isSigningUp ? "Create Account" : "Sign In",
+                isDisabled: viewModel.isLoading
+            ) {
+                Task {
+                    do {
+                        let user = try await viewModel.submit(using: appModel.container.authService)
+                        await appModel.signIn(user: user)
+                    } catch {
+                        appModel.notice = AppNotice(title: "Error", message: error.localizedDescription)
                     }
                 }
+            }
 
-                BrandCard {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Other sign-in options")
-                            .font(BrandTypography.bodyStrong)
-                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                        if appModel.container.authService.supportsAppleSignIn {
-                            socialButton(title: "Continue with Apple", symbol: "apple.logo") {
-                                Task {
-                                    await handleApple()
-                                }
-                            }
-                        }
-                        if appModel.container.authService.supportsGoogleSignIn {
-                            socialButton(title: "Continue with Google", symbol: "globe") {
-                                Task {
-                                    await handleGoogle()
-                                }
-                            }
-                        }
-                        if appModel.container.authService.supportsGuestAccess {
-                            Button("Continue as Guest") {
-                                Task {
-                                    do {
-                                        let user = try await viewModel.continueAsGuest(using: appModel.container.authService)
-                                        await appModel.signIn(user: user)
-                                    } catch {
-                                        appModel.notice = AppNotice(title: "Couldn't Continue", message: error.localizedDescription)
-                                    }
-                                }
-                            }
-                            .font(BrandTypography.bodyStrong)
-                            .foregroundStyle(BrandColor.teal)
-                        }
-                    }
-                }
-
-                Button("Forgot Password") {
+            if !viewModel.isSigningUp {
+                GhostButton(title: "Forgot Password?") {
                     Task {
                         do {
                             try await viewModel.resetPassword(using: appModel.container.authService)
-                            appModel.notice = AppNotice(title: "Reset Email Sent", message: "Check your inbox for the password reset link.")
+                            appModel.notice = AppNotice(title: "Email Sent", message: "Check your inbox for a reset link.")
                         } catch {
-                            appModel.notice = AppNotice(title: "Couldn't Start Reset", message: error.localizedDescription)
+                            appModel.notice = AppNotice(title: "Error", message: error.localizedDescription)
                         }
                     }
                 }
-                .font(BrandTypography.caption)
-                .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                .padding(.bottom, 32)
             }
-            .padding(.horizontal, 24)
         }
     }
 
-    private func handlePrimaryAction() async {
-        do {
-            let user = try await viewModel.submit(using: appModel.container.authService)
-            await appModel.signIn(user: user)
-        } catch {
-            appModel.notice = AppNotice(title: "Couldn't Continue", message: error.localizedDescription)
-        }
-    }
+    // MARK: — Social
 
-    private func handleApple() async {
-        do {
-            let user = try await viewModel.signInWithApple(using: appModel.container.authService)
-            await appModel.signIn(user: user)
-        } catch {
-            appModel.notice = AppNotice(title: "Couldn't Complete Apple Sign-In", message: error.localizedDescription)
-        }
-    }
-
-    private func handleGoogle() async {
-        do {
-            let user = try await viewModel.signInWithGoogle(using: appModel.container.authService)
-            await appModel.signIn(user: user)
-        } catch {
-            appModel.notice = AppNotice(title: "Couldn't Complete Google Sign-In", message: error.localizedDescription)
-        }
-    }
-
-    private func textField(_ title: String, text: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
-        TextField(title, text: text)
-            .keyboardType(keyboard)
-            .textInputAutocapitalization(keyboard == .emailAddress ? .never : .words)
-            .autocorrectionDisabled(keyboard == .emailAddress)
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(BrandColor.elevatedBackground(for: colorScheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
-                    )
-            )
-            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-    }
-
-    private func secureField(_ title: String, text: Binding<String>) -> some View {
-        SecureField(title, text: text)
-            .textInputAutocapitalization(.never)
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(BrandColor.elevatedBackground(for: colorScheme))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
-                    )
-            )
-            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-    }
-
-    private func socialButton(title: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: symbol)
-                    .font(.headline)
-                Text(title)
-                    .font(BrandTypography.bodyStrong)
-                Spacer()
+    private var socialSection: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Rectangle().fill(BrandColor.divider).frame(height: 1)
+                Text("or")
+                    .font(BrandTypography.micro)
+                    .foregroundColor(BrandColor.textTertiary)
+                Rectangle().fill(BrandColor.divider).frame(height: 1)
             }
-            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(BrandColor.elevatedBackground(for: colorScheme))
+
+            if appModel.container.authService.supportsAppleSignIn {
+                Button {
+                    Task {
+                        do {
+                            let user = try await viewModel.signInWithApple(using: appModel.container.authService)
+                            await appModel.signIn(user: user)
+                        } catch {
+                            appModel.notice = AppNotice(title: "Error", message: error.localizedDescription)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "apple.logo")
+                            .font(.system(size: 18))
+                        Text("Continue with Apple")
+                            .font(BrandTypography.button)
+                    }
+                    .foregroundColor(BrandColor.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(BrandColor.surfaceElevated)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(BrandColor.stroke, lineWidth: 0.5)
                     )
-            )
+                }
+            }
+
+            if appModel.container.authService.supportsGoogleSignIn {
+                Button {
+                    Task {
+                        do {
+                            let user = try await viewModel.signInWithGoogle(using: appModel.container.authService)
+                            await appModel.signIn(user: user)
+                        } catch {
+                            appModel.notice = AppNotice(title: "Error", message: error.localizedDescription)
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Text("G")
+                            .font(BrandTypography.bodyStrong)
+                            .foregroundColor(BrandColor.coral)
+                        Text("Continue with Google")
+                            .font(BrandTypography.button)
+                    }
+                    .foregroundColor(BrandColor.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(BrandColor.surfaceElevated)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(BrandColor.stroke, lineWidth: 0.5)
+                    )
+                }
+            }
+
+            if appModel.container.authService.supportsGuestAccess {
+                GhostButton(title: "Continue as Guest") {
+                    Task {
+                        do {
+                            let user = try await viewModel.continueAsGuest(using: appModel.container.authService)
+                            await appModel.signIn(user: user)
+                        } catch {
+                            appModel.notice = AppNotice(title: "Error", message: error.localizedDescription)
+                        }
+                    }
+                }
+            }
         }
-        .buttonStyle(.plain)
+    }
+
+    // MARK: — Helpers
+
+    private func styledTextField(_ placeholder: String, text: Binding<String>) -> some View {
+        TextField(placeholder, text: text)
+            .font(BrandTypography.body)
+            .foregroundColor(BrandColor.textPrimary)
+            .padding(.horizontal, 16)
+            .frame(height: 52)
+            .background(BrandColor.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(BrandColor.stroke, lineWidth: 0.5)
+            )
+    }
+
+    private func styledSecureField(_ placeholder: String, text: Binding<String>) -> some View {
+        SecureField(placeholder, text: text)
+            .font(BrandTypography.body)
+            .foregroundColor(BrandColor.textPrimary)
+            .padding(.horizontal, 16)
+            .frame(height: 52)
+            .background(BrandColor.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(BrandColor.stroke, lineWidth: 0.5)
+            )
     }
 }

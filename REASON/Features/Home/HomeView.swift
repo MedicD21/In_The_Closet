@@ -1,225 +1,248 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var appModel: AppModel
-    @State private var isShowingUpload = false
-    @State private var uploadDraft = UploadDraft()
+    @ObservedObject var appModel: AppModel
+    let onStartUpload: (UploadDraft) -> Void
+    let onNavigateToProjects: () -> Void
+    let onNavigateToSettings: () -> Void
+
+    private var bestProject: SpaceProject? {
+        appModel.projects.max(by: { ($0.currentScore ?? 0) < ($1.currentScore ?? 0) })
+    }
+
+    private var bestScore: Int { bestProject?.currentScore ?? 0 }
+
+    private var greetingAdjective: String {
+        guard !appModel.projects.isEmpty else { return "ready for their first reset" }
+        switch bestScore {
+        case ..<40:    return "like they need you"
+        case ..<60:    return "like a work in progress"
+        case ..<80:    return "pretty good"
+        default:       return "fantastic"
+        }
+    }
+
+    private var greetingName: String {
+        // displayName is String (not optional), so no extra ?
+        appModel.currentUser?.displayName.components(separatedBy: " ").first ?? "there"
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                header
-                heroCard
-                spaceTypeSection
-                recentProjectsSection
-                inspirationSection
+        ZStack(alignment: .top) {
+            BrandColor.background.ignoresSafeArea()
+            RadialGradient(
+                colors: [BrandColor.tealMuted.opacity(0.3), .clear],
+                center: .topTrailing, startRadius: 0, endRadius: 380
+            )
+            .ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    headerBar
+                        .padding(.horizontal, 20)
+                        .padding(.top, 60)
+                        .padding(.bottom, 20)
+
+                    greetingBlock
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 28)
+
+                    scoreRingSection
+                        .padding(.bottom, 28)
+
+                    quickActionRow
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 28)
+
+                    recentProjectsStrip
+                        .padding(.bottom, 28)
+
+                    spaceTypeStrip
+                        .padding(.bottom, 120)
+                }
+            }
+        }
+    }
+
+    private var headerBar: some View {
+        HStack {
+            HStack(spacing: 10) {
+                Image("AppIcon")
+                    .resizable().frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                Text("Reset My Space")
+                    .font(BrandTypography.sectionTitle)
+                    .foregroundColor(BrandColor.textPrimary)
+            }
+            Spacer()
+            Button(action: onNavigateToSettings) {
+                ZStack {
+                    Circle()
+                        .fill(BrandColor.surfaceElevated)
+                        .frame(width: 36, height: 36)
+                    Text(initials)
+                        .font(BrandTypography.label)
+                        .foregroundColor(BrandColor.teal)
+                }
+            }
+        }
+    }
+
+    private var initials: String {
+        let name = appModel.currentUser?.displayName ?? ""
+        return String(name.prefix(1)).uppercased().isEmpty ? "?" : String(name.prefix(1)).uppercased()
+    }
+
+    private var timeOfDay: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        if hour < 12 { return "morning" }
+        if hour < 17 { return "afternoon" }
+        return "evening"
+    }
+
+    private var greetingBlock: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Good \(timeOfDay), \(greetingName).")
+                .font(BrandTypography.screenTitle)
+                .foregroundColor(BrandColor.textPrimary)
+            Text("Your spaces are looking \(greetingAdjective).")
+                .font(BrandTypography.body)
+                .foregroundColor(BrandColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var scoreRingSection: some View {
+        VStack(spacing: 12) {
+            ScoreRing(score: bestScore, size: 200, lineWidth: 10)
+
+            if appModel.projects.isEmpty {
+                Text("Tap ✦ to start")
+                    .font(BrandTypography.micro)
+                    .foregroundColor(BrandColor.textTertiary)
+            } else if let project = bestProject {
+                Text(project.title)
+                    .font(BrandTypography.micro)
+                    .foregroundColor(BrandColor.textSecondary)
+            }
+        }
+    }
+
+    private var quickActionRow: some View {
+        HStack(spacing: 10) {
+            PrimaryButton("New Reset") {
+                onStartUpload(UploadDraft(mode: .organize))
+            }
+            SecondaryButton("Compare", accent: BrandColor.gold) {
+                onStartUpload(UploadDraft(mode: .compareProgress))
+            }
+            SecondaryButton("Stage", accent: BrandColor.coral) {
+                onStartUpload(UploadDraft(mode: .stageForSelling))
+            }
+        }
+    }
+
+    private var recentProjectsStrip: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Recent Spaces")
+                    .font(BrandTypography.sectionTitle)
+                    .foregroundColor(BrandColor.textPrimary)
+                Spacer()
+                GhostButton(title: "See all →", action: onNavigateToProjects)
             }
             .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 30)
-        }
-        .navigationTitle("")
-        .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $isShowingUpload) {
-            if let currentUser = appModel.currentUser {
-                UploadFlowContainerView(
-                    container: appModel.container,
-                    currentUser: currentUser,
-                    initialDraft: uploadDraft
-                )
-            }
-        }
-    }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            TagChip(title: "AI-guided reset studio", accent: BrandColor.gold)
-            Text("Reset My Space")
-                .font(BrandTypography.brandTitle)
-                .foregroundStyle(colorScheme == .dark ? BrandColor.gold : BrandColor.teal)
-            Text("By REASON")
-                .font(BrandTypography.caption)
-                .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-            Text("Sharper guidance for real rooms, calmer surfaces, and budget-friendly resets that still feel doable.")
-                .font(BrandTypography.body)
-                .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-        }
-    }
-
-    private var heroCard: some View {
-        BrandCard {
-            VStack(alignment: .leading, spacing: 18) {
-                HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Start with one small space.")
-                            .font(BrandTypography.caption)
-                            .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                        Text("Modern resets that feel realistic.")
-                            .font(BrandTypography.screenTitle)
-                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "sparkles.rectangle.stack.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(BrandColor.teal)
-                        .frame(width: 48, height: 48)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(BrandColor.softTeal.opacity(colorScheme == .dark ? 0.18 : 0.2))
-                        )
-                }
-
-                Text("Upload a photo, get a supportive score, and build a polished reset plan with shopping suggestions that feel doable.")
-                    .font(BrandTypography.body)
-                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    HomeFeatureBadge(title: "Live analysis", systemImage: "waveform.path.ecg", accent: BrandColor.teal)
-                    HomeFeatureBadge(title: "Budget paths", systemImage: "dollarsign.circle", accent: BrandColor.gold)
-                    HomeFeatureBadge(title: "Concept preview", systemImage: "photo.on.rectangle", accent: BrandColor.coral)
-                }
-
-                PrimaryActionButton("Upload a Photo", systemImage: "camera.fill") {
-                    uploadDraft = UploadDraft()
-                    isShowingUpload = true
-                }
-            }
-        }
-    }
-
-    private var spaceTypeSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "Choose a space", subtitle: "Quick starts for the most common resets")
-            ForEach(SpaceType.allCases, id: \.id) { type in
-                Button {
-                    uploadDraft = UploadDraft(spaceType: type, customSpaceName: "", mode: .organize, selectedImageData: nil, imageAssetName: nil, existingProjectID: nil)
-                    isShowingUpload = true
-                } label: {
-                    HStack(spacing: 14) {
-                        Image(systemName: type.iconName)
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                            .frame(width: 42, height: 42)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(BrandColor.gold.opacity(colorScheme == .dark ? 0.18 : 0.2))
-                            )
-                        Text(type.displayName)
-                            .font(BrandTypography.bodyStrong)
-                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                        Spacer()
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                            .frame(width: 30, height: 30)
-                            .background(
-                                Circle()
-                                    .fill(BrandColor.elevatedBackground(for: colorScheme))
-                            )
-                    }
-                    .padding(18)
-                    .background(
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [BrandColor.surface(for: colorScheme), BrandColor.secondarySurface(for: colorScheme)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                    .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
-                            )
+            if appModel.projects.isEmpty {
+                RoundedRectangle(cornerRadius: 20)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [6]))
+                    .foregroundColor(BrandColor.stroke)
+                    .frame(width: 200, height: 140)
+                    .overlay(
+                        Image(systemName: "plus")
+                            .font(.system(size: 28))
+                            .foregroundColor(BrandColor.textTertiary)
                     )
+                    .padding(.horizontal, 20)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(appModel.projects.prefix(6)) { project in
+                            recentProjectCard(project)
+                        }
+                    }
+                    .padding(.horizontal, 20)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
 
-    private var recentProjectsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "Recent Projects", subtitle: appModel.projects.isEmpty ? "Your saved spaces will land here." : nil)
+    @ViewBuilder
+    private func recentProjectCard(_ project: SpaceProject) -> some View {
+        RoundedRectangle(cornerRadius: 20)
+            .fill(BrandColor.surface)
+            .frame(width: 200, height: 140)
+            .overlay(alignment: .bottomLeading) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(project.title)
+                        .font(BrandTypography.bodyStrong)
+                        .foregroundColor(BrandColor.textPrimary)
+                        .lineLimit(1)
+                    if let score = project.currentScore {
+                        Text("\(score)")
+                            .font(BrandTypography.scoreSmall)
+                            .foregroundColor(scoreColor(for: score))
+                    }
+                }
+                .padding(12)
+            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(BrandColor.stroke, lineWidth: 0.5)
+            )
+    }
 
-            if let latest = appModel.projects.first {
-                NavigationLink {
-                    ProjectDetailView(project: latest)
-                } label: {
-                    BrandCard {
-                        HStack(spacing: 16) {
-                            ProjectImageView(projectImage: latest.images.first)
-                                .frame(width: 110, height: 110)
+    private func scoreColor(for score: Int) -> Color {
+        switch score {
+        case ..<40: BrandColor.coral
+        case ..<70: BrandColor.gold
+        default: BrandColor.teal
+        }
+    }
 
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(latest.title)
-                                    .font(BrandTypography.sectionTitle)
-                                    .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                                Text(latest.mode.longLabel)
-                                    .font(BrandTypography.caption)
-                                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                                if let score = latest.currentScore {
-                                    ScoreChip(score: score, title: "Latest Score")
-                                }
+    private var spaceTypeStrip: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Reset a space")
+                .font(BrandTypography.label)
+                .foregroundColor(BrandColor.textSecondary)
+                .padding(.horizontal, 20)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    // Filter out .custom, use iconName (NOT systemSymbol)
+                    ForEach(SpaceType.allCases.filter { $0 != .custom }, id: \.self) { type in
+                        Button {
+                            onStartUpload(UploadDraft(spaceType: type))
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: type.iconName)
+                                Text(type.displayName)
+                                    .font(BrandTypography.label)
                             }
+                            .foregroundColor(BrandColor.textSecondary)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(BrandColor.surfaceElevated)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(BrandColor.stroke, lineWidth: 0.5)
+                            )
                         }
                     }
                 }
-                .buttonStyle(.plain)
-            } else {
-                BrandCard {
-                    Text("No saved projects yet. Start with a photo and we’ll hold onto the plan for you.")
-                        .font(BrandTypography.body)
-                        .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                }
+                .padding(.horizontal, 20)
             }
         }
-    }
-
-    private var inspirationSection: some View {
-        BrandCard {
-            VStack(alignment: .leading, spacing: 14) {
-                SectionHeader(title: "Brand direction", subtitle: "Current visual reference included in the build")
-                ReferenceImageView(assetName: "HomeMockup", bundleFileName: "home-mockup", fileExtension: "png")
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                Text("Soft rounded cards, warm neutral space, and teal-gold accents guide the UI language throughout the app.")
-                    .font(BrandTypography.caption)
-                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-            }
-        }
-    }
-}
-
-private struct HomeFeatureBadge: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let title: String
-    let systemImage: String
-    let accent: Color
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(accent)
-            Text(title)
-                .font(BrandTypography.caption)
-                .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(BrandColor.elevatedBackground(for: colorScheme))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(BrandColor.cardStroke(for: colorScheme), lineWidth: 1)
-                )
-        )
     }
 }

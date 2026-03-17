@@ -13,10 +13,10 @@ struct ReferenceImageView: View {
         } else {
             ZStack {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(BrandColor.elevatedBackground(for: .light))
+                    .fill(BrandColor.surfaceElevated)
                 Image(systemName: "photo")
                     .font(.system(size: 30, weight: .medium))
-                    .foregroundStyle(BrandColor.secondaryText(for: .light))
+                    .foregroundStyle(BrandColor.textSecondary)
             }
         }
     }

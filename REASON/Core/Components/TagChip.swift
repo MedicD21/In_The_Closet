@@ -1,24 +1,26 @@
 import SwiftUI
 
-struct TagChip: View {
-    @Environment(\.colorScheme) private var colorScheme
+enum TagChipVariant {
+    case filled
+    case outlined
+}
 
+struct TagChip: View {
     let title: String
-    var accent: Color = BrandColor.gold
+    let accent: Color
+    var variant: TagChipVariant = .outlined
 
     var body: some View {
         Text(title)
-            .font(BrandTypography.caption)
-            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(accent.opacity(colorScheme == .dark ? 0.18 : 0.14))
-                    .overlay(
-                        Capsule(style: .continuous)
-                            .stroke(accent.opacity(colorScheme == .dark ? 0.26 : 0.18), lineWidth: 1)
-                    )
+            .font(BrandTypography.micro)
+            .foregroundColor(accent)
+            .padding(.horizontal, 10)
+            .frame(height: 26)
+            .background(variant == .filled ? accent.opacity(0.18) : Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(variant == .outlined ? accent : Color.clear, lineWidth: 1)
             )
     }
 }

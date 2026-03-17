@@ -6,7 +6,7 @@ struct AppShellView: View {
 
     var body: some View {
         ZStack {
-            BrandBackground()
+            BrandColor.background.ignoresSafeArea()
 
             switch appModel.rootDestination {
             case .splash:
@@ -16,7 +16,7 @@ struct AppShellView: View {
             case .auth:
                 AuthView()
             case .main:
-                MainTabView()
+                RMSShellView(container: appModel.container, appModel: appModel)
             }
         }
         .preferredColorScheme(themeStore.preferredColorScheme)

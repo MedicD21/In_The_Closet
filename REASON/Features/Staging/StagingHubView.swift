@@ -1,166 +1,147 @@
 import SwiftUI
 
 struct StagingHubView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @EnvironmentObject private var appModel: AppModel
-    @State private var isShowingFlow = false
+    @ObservedObject var appModel: AppModel
+    let onStartUpload: (UploadDraft) -> Void
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                BrandCard {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Staging Mode")
-                            .font(BrandTypography.screenTitle)
-                            .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-                        Text("Use Reset My Space to lighten visual clutter, hide personal cues, and build a showing-day checklist that feels achievable.")
-                            .font(BrandTypography.body)
-                            .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                        PrimaryActionButton("Start a Staging Review", systemImage: "house.and.flag") {
-                            isShowingFlow = true
-                        }
-                    }
-                }
-
-                BrandCard {
-                    VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader(title: "Common staging wins", subtitle: nil)
-                        Text("Remove personal photos")
-                        Text("Edit countertop overflow")
-                        Text("Match baskets and hangers")
-                        Text("Hide cords, pet items, and niche products")
-                    }
-                    .font(BrandTypography.body)
-                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                }
-
-                if !appModel.projects.filter({ $0.mode == .stageForSelling }).isEmpty {
-                    SectionHeader(title: "Saved staging projects", subtitle: nil)
-                    ForEach(appModel.projects.filter { $0.mode == .stageForSelling }) { project in
-                        NavigationLink {
-                            ProjectDetailView(project: project)
-                        } label: {
-                            BrandCard {
-                                HStack {
-                                    ProjectImageView(projectImage: project.images.first)
-                                        .frame(width: 88, height: 88)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(project.title)
-                                            .font(BrandTypography.bodyStrong)
-                                        Text(project.currentScore.map { "Readiness \($0)" } ?? "Pending")
-                                            .font(BrandTypography.caption)
-                                            .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                                    }
-                                    Spacer()
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .padding(20)
-        }
-        .navigationTitle("Staging")
-        .sheet(isPresented: $isShowingFlow) {
-            if let user = appModel.currentUser {
-                UploadFlowContainerView(
-                    container: appModel.container,
-                    currentUser: user,
-                    initialDraft: UploadDraft(spaceType: .custom, customSpaceName: "", mode: .stageForSelling, selectedImageData: nil, imageAssetName: nil, existingProjectID: nil)
-                )
-            }
-        }
+    private var stagingProjects: [SpaceProject] {
+        appModel.projects.filter { $0.mode == .stageForSelling }
     }
-}
-
-struct StagingResultsView: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    let analysis: SpaceAnalysis
-    let project: SpaceProject
-    @Binding var selectedBudgetTier: BudgetTier
-    let onSave: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                if let advice = analysis.stagingAdvice {
-                    ScoreChip(score: advice.readinessScore, title: "Staging Readiness")
+        ZStack(alignment: .top) {
+            BrandColor.background.ignoresSafeArea()
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 0) {
+                    headerBar
+                        .padding(.horizontal, 20)
+                        .padding(.top, 60)
+                        .padding(.bottom, 20)
 
-                    BrandCard {
-                        VStack(alignment: .leading, spacing: 14) {
-                            Text(analysis.summaryText)
-                                .font(BrandTypography.body)
-                            if !analysis.confidenceNotes.isEmpty {
-                                Divider()
-                                ForEach(analysis.confidenceNotes, id: \.self) { note in
-                                    Text("• \(note)")
-                                        .font(BrandTypography.caption)
-                                        .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                                }
-                            }
-                            section(title: "Remove", items: advice.removeItems)
-                            section(title: "Hide", items: advice.hideItems)
-                            section(title: "Add", items: advice.addItems)
-                        }
+                    if stagingProjects.isEmpty {
+                        emptyState
+                    } else {
+                        projectList
                     }
-
-                    BrandCard {
-                        VStack(alignment: .leading, spacing: 14) {
-                            SectionHeader(title: "Showing-Day Checklist", subtitle: "Quick wins before photos or guests")
-                            ForEach(advice.showingDayChecklist) { item in
-                                HStack {
-                                    Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(BrandColor.teal)
-                                    Text(item.title)
-                                        .font(BrandTypography.body)
-                                }
-                            }
-                            Divider()
-                            ForEach(advice.quickWins, id: \.self) { quickWin in
-                                Text("• \(quickWin)")
-                                    .font(BrandTypography.body)
-                                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
-                            }
-                        }
-                    }
-                }
-
-                if !analysis.budgetRecommendations.isEmpty {
-                    NavigationLink {
-                        ShoppingRecommendationsView(analysis: analysis, selectedBudgetTier: $selectedBudgetTier)
-                    } label: {
-                        PrimaryActionLabel(title: "Open Staging Shopping List", systemImage: "cart.fill")
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                NavigationLink {
-                    VisualizationView(analysis: analysis, project: project, selectedBudgetTier: selectedBudgetTier)
-                } label: {
-                    SecondaryActionLabel(title: "See Staged Concept Preview")
-                }
-                .buttonStyle(.plain)
-
-                PrimaryActionButton("Save Staging Project", systemImage: "bookmark.fill") {
-                    onSave()
                 }
             }
-            .padding(.bottom, 30)
+            .safeAreaInset(edge: .bottom) { actionStrip }
         }
     }
 
-    private func section(title: String, items: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(BrandTypography.bodyStrong)
-                .foregroundStyle(BrandColor.primaryText(for: colorScheme))
-            ForEach(items, id: \.self) { item in
-                Text("• \(item)")
+    private var headerBar: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Staging")
+                    .font(BrandTypography.screenTitle)
+                    .foregroundColor(BrandColor.textPrimary)
+                Text("Prepare your space for sale")
                     .font(BrandTypography.body)
-                    .foregroundStyle(BrandColor.secondaryText(for: colorScheme))
+                    .foregroundColor(BrandColor.textSecondary)
+            }
+            Spacer()
+        }
+    }
+
+    private var projectList: some View {
+        LazyVStack(spacing: 12) {
+            ForEach(stagingProjects) { project in
+                stagingCard(project)
             }
         }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 100)
+    }
+
+    private func stagingCard(_ project: SpaceProject) -> some View {
+        RMSCard {
+            HStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(BrandColor.tealMuted)
+                        .frame(width: 52, height: 52)
+                    if let score = project.currentScore {
+                        Text("\(score)")
+                            .font(BrandTypography.scoreSmall)
+                            .foregroundColor(BrandColor.teal)
+                    } else {
+                        Image(systemName: project.spaceType.iconName)
+                            .font(.system(size: 20))
+                            .foregroundColor(BrandColor.teal)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(project.title)
+                        .font(BrandTypography.bodyStrong)
+                        .foregroundColor(BrandColor.textPrimary)
+                        .lineLimit(1)
+                    TagChip(title: project.spaceType.displayName, accent: BrandColor.teal)
+                    Text(project.updatedAt.formatted(.relative(presentation: .named)))
+                        .font(BrandTypography.micro)
+                        .foregroundColor(BrandColor.textTertiary)
+                }
+
+                Spacer()
+
+                if let score = project.currentScore {
+                    VStack(spacing: 2) {
+                        Text("\(score)")
+                            .font(BrandTypography.scoreSmall)
+                            .foregroundColor(readinessColor(score))
+                        Text(readinessLabel(score))
+                            .font(BrandTypography.micro)
+                            .foregroundColor(BrandColor.textTertiary)
+                    }
+                }
+            }
+            .padding(16)
+        }
+    }
+
+    private func readinessColor(_ score: Int) -> Color {
+        switch score {
+        case ..<60: BrandColor.coral
+        case ..<80: BrandColor.gold
+        default: BrandColor.teal
+        }
+    }
+
+    private func readinessLabel(_ score: Int) -> String {
+        switch score {
+        case ..<60: return "Not Ready"
+        case ..<80: return "Getting There"
+        default:    return "Show-Ready"
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "house.and.flag")
+                .font(.system(size: 48))
+                .foregroundColor(BrandColor.textTertiary)
+            Text("No staging projects yet")
+                .font(BrandTypography.sectionTitle)
+                .foregroundColor(BrandColor.textPrimary)
+            Text("Analyze a space to prepare it for sale.")
+                .font(BrandTypography.body)
+                .foregroundColor(BrandColor.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 40)
+        .padding(.top, 60)
+    }
+
+    private var actionStrip: some View {
+        VStack(spacing: 10) {
+            PrimaryButton("Stage a Space") {
+                var draft = UploadDraft()
+                draft.mode = .stageForSelling
+                onStartUpload(draft)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(BrandColor.background)
     }
 }
